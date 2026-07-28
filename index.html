@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>채널 대시보드 · Instagram / YouTube</title>
+<meta name="robots" content="noindex, nofollow" />
+<meta name="referrer" content="no-referrer" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d2129; --line:#272c36;
+    --text:#e8eaed; --muted:#9aa3b0;
+    --ig:#e1306c; --yt:#ff0033; --good:#22c55e; --bad:#ef4444;
+    --accent:#6aa9ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Pretendard","Malgun Gothic","Segoe UI",system-ui,sans-serif;}
+  header{padding:20px 28px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.2px}
+  header .sub{color:var(--muted);font-size:13px}
+  .spacer{flex:1}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  select,button,label.file{background:var(--panel2);color:var(--text);
+    border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer}
+  button:hover,label.file:hover{border-color:var(--accent)}
+  .seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-radius:0;background:transparent;padding:8px 14px}
+  .seg button.active{background:var(--accent);color:#08121f;font-weight:700}
+  main{padding:24px 28px;max-width:1400px;margin:0 auto}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:22px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .kpi .label{color:var(--muted);font-size:12px;margin-bottom:8px;display:flex;gap:6px;align-items:center}
+  .kpi .value{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .kpi .delta{font-size:13px;margin-top:6px;font-weight:600}
+  .delta.up{color:var(--good)} .delta.down{color:var(--bad)} .delta.flat{color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:22px}
+  .chart-card h3{margin:0 0 14px;font-size:14px;font-weight:700}
+  .chart-wrap{position:relative;height:240px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--muted);font-weight:600;cursor:pointer;user-select:none}
+  th.sorted::after{content:" ▼";color:var(--accent)}
+  th.asc.sorted::after{content:" ▲"}
+  tbody tr:hover{background:var(--panel2)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
+  .b-ig{background:rgba(168,85,247,.18);color:#c99bff}
+  .b-yt{background:rgba(255,59,48,.18);color:#ff8a80}
+  .type{color:var(--muted);font-size:12px}
+  .clink{color:var(--text);text-decoration:none}
+  .clink:hover{color:var(--accent);text-decoration:underline}
+  .ext{color:var(--muted);font-size:11px}
+  .clink:hover .ext{color:var(--accent)}
+  .dropzone{border:1px dashed var(--line);border-radius:12px;padding:14px;color:var(--muted);
+    font-size:13px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:22px;background:var(--panel)}
+  .dropzone b{color:var(--text)}
+  .legend-note{color:var(--muted);font-size:12px;margin-top:10px}
+  .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  @media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>📊 채널 대시보드</h1>
+  <span class="sub">Instagram · YouTube 통합 운영 현황</span>
+  <div class="spacer"></div>
+  <div class="controls">
+    <div class="seg" id="platformSeg">
+      <button data-p="all" class="active">전체</button>
+      <button data-p="instagram">Instagram</button>
+      <button data-p="youtube">YouTube</button>
+    </div>
+    <select id="rangeSel">
+      <option value="7">최근 7일</option>
+      <option value="30" selected>최근 30일</option>
+      <option value="90">최근 90일</option>
+      <option value="all">전체 기간</option>
+    </select>
+  </div>
+</header>
+
+<main>
+  <div class="dropzone">
+    <div>🗂️ <b>실제 데이터 연결</b> — 양식에 맞춘 CSV를 올리면 샘플이 교체됩니다.</div>
+    <label class="file">일별 지표 CSV<input type="file" id="dailyFile" accept=".csv" hidden></label>
+    <label class="file">콘텐츠 CSV<input type="file" id="contentFile" accept=".csv" hidden></label>
+    <span class="sub" id="dataStatus">현재: 샘플 데이터 표시 중</span>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid2">
+    <div class="card chart-card">
+      <h3>팔로워 · 구독자 추이</h3>
+      <div class="chart-wrap"><canvas id="audChart"></canvas></div>
+    </div>
+    <div class="card chart-card">
+      <h3>조회수 · 도달</h3>
+      <div class="chart-wrap"><canvas id="reachChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card chart-card">
+      <h3>참여율 추이 (%)</h3>
+      <div class="chart-wrap"><canvas id="engChart"></canvas></div>
+    </div>
+    <div class="card chart-card">
+      <h3>콘텐츠 유형별 평균 조회수</h3>
+      <div class="chart-wrap"><canvas id="typeChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <h3 style="margin:0;flex:1">콘텐츠별 성과 랭킹</h3>
+      <span class="sub">헤더를 클릭해 정렬 · 공유 열은 IG 리그램 포함 · 2025.07 이후 게시물</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="rankTable">
+        <thead><tr>
+          <th data-k="title">콘텐츠</th>
+          <th data-k="platform">채널</th>
+          <th data-k="date">게시일</th>
+          <th data-k="views" class="sorted">조회수</th>
+          <th data-k="reach">도달</th>
+          <th data-k="likes">좋아요</th>
+          <th data-k="comments">댓글</th>
+          <th data-k="shares">공유·리그램</th>
+          <th data-k="saves">저장</th>
+          <th data-k="eng">참여율</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="legend-note">참여율 = (좋아요+댓글+공유+저장) ÷ 도달 × 100. 도달 미집계 시 조회수 기준.<br>표의 <b>조회수</b>는 <b>게시물별 누적</b>이라, 상단 KPI의 <b>총 조회수(계정·기간 기준)</b>와는 집계 범위가 다릅니다.</div>
+  </div>
+</main>
+
+<script>
+/* ---------- 내장 샘플 데이터 (file:// 에서도 바로 보이도록) ---------- */
+const SAMPLE_DAILY = `platform,date,audience,reach,impressions,views,profile_views
+instagram,2026-06-01,18420,9200,14100,8800,640
+instagram,2026-06-08,18610,10400,16200,9900,705
+instagram,2026-06-15,18880,12800,19500,12200,820
+instagram,2026-06-22,19240,15100,23400,14600,910
+instagram,2026-06-29,19705,17600,27100,16900,1015
+youtube,2026-06-01,7320,0,41000,38500,0
+youtube,2026-06-08,7480,0,46500,43800,0
+youtube,2026-06-15,7690,0,52800,49600,0
+youtube,2026-06-22,7960,0,61200,57400,0
+youtube,2026-06-29,8310,0,73500,69100,0`;
+
+const SAMPLE_CONTENT = `platform,date,title,type,views,reach,likes,comments,shares,saves,url
+instagram,2026-06-27,여름 PC 견적 이벤트 릴스,reel,16900,15200,1840,212,460,390,https://www.instagram.com/compuzone_kr
+instagram,2026-06-20,신상 그래픽카드 언박싱,reel,12400,11800,1320,168,290,260,https://www.instagram.com/compuzone_kr
+instagram,2026-06-13,사무용 노트북 추천 카드뉴스,carousel,8600,8100,940,75,120,310,https://www.instagram.com/compuzone_kr
+instagram,2026-06-06,조립PC 라이브 예고,image,5200,4900,610,44,80,90,https://www.instagram.com/compuzone_kr
+youtube,2026-06-25,2026 가성비 조립PC 풀가이드,long,69100,0,5200,820,640,0,https://www.youtube.com/@icompuzone
+youtube,2026-06-18,RTX 신제품 벤치마크 비교,long,57400,0,4100,690,510,0,https://www.youtube.com/@icompuzone
+youtube,2026-06-11,초보용 PC 견적 짜는 법 쇼츠,short,49600,0,3300,210,880,0,https://www.youtube.com/@icompuzone
+youtube,2026-06-04,모니터 주사율 체감 차이 쇼츠,short,43800,0,2900,180,720,0,https://www.youtube.com/@icompuzone`;
+
+/* ---------- 작은 CSV 파서 ---------- */
+function parseCSV(text){
+  const lines=text.trim().split(/\r?\n/);
+  const head=lines[0].split(',').map(s=>s.trim());
+  return lines.slice(1).map(line=>{
+    const cells=[]; let cur='',q=false;
+    for(const ch of line){
+      if(ch==='"'){q=!q;}
+      else if(ch===','&&!q){cells.push(cur);cur='';}
+      else cur+=ch;
+    }
+    cells.push(cur);
+    const o={}; head.forEach((h,i)=>{
+      const v=(cells[i]??'').trim();
+      o[h]=isNaN(v)||v===''?v:Number(v);
+    });
+    return o;
+  });
+}
+
+let DAILY=parseCSV(SAMPLE_DAILY);
+let CONTENT=parseCSV(SAMPLE_CONTENT);
+let platform='all', range='30';
+const charts={};
+const fmt=n=>Number(n).toLocaleString('ko-KR');
+const PCOLOR={instagram:'#a855f7',youtube:'#ff3b30'}; // IG 보라 · YT 빨강 (색맹 대비 검증)
+const PDASH ={instagram:[],youtube:[7,4]};             // YT는 점선으로 추가 구분
+const PLABEL={instagram:'IG',youtube:'YT'};
+const CONTENT_CUTOFF='2025-07-01';   // 이 날짜 이전 게시물은 랭킹·차트에서 제외
+function contentFor(plats){return CONTENT.filter(c=>plats.includes(c.platform)&&(''+c.date)>=CONTENT_CUTOFF);}
+
+function filterDailyByRange(rows){
+  if(range==='all') return rows;
+  const days=Number(range);
+  const max=rows.reduce((m,r)=>r.date>m?r.date:m,'');
+  const cut=new Date(max); cut.setDate(cut.getDate()-days);
+  return rows.filter(r=>new Date(r.date)>=cut);
+}
+function engRate(c){
+  const base=c.reach||c.views||0;
+  if(!base) return 0;
+  return ((c.likes+c.comments+c.shares+(c.saves||0))/base*100);
+}
+
+/* ---------- KPI ---------- */
+function renderKPIs(){
+  const plats=platform==='all'?['instagram','youtube']:[platform];
+  const daily=filterDailyByRange(DAILY).filter(r=>plats.includes(r.platform));
+  // audience: 마지막값 합, 증감 = 마지막-처음
+  let audNow=0,audStart=0,viewsSum=0,reachSum=0,profileSum=0;
+  plats.forEach(p=>{
+    const rs=daily.filter(r=>r.platform===p).sort((a,b)=>a.date<b.date?-1:1);
+    if(rs.length){audNow+=rs[rs.length-1].audience; audStart+=rs[0].audience;}
+    rs.forEach(r=>{viewsSum+=r.views||0; reachSum+=r.reach||0; profileSum+=r.profile_views||0;});
+  });
+  const audDelta=audNow-audStart;
+  const audPct=audStart?(audDelta/audStart*100):0;
+  // content engagement avg (기준일 이후 게시물만)
+  const cont=contentFor(plats);
+  const engAvg=cont.length?cont.reduce((s,c)=>s+engRate(c),0)/cont.length:0;
+
+  const cards=[
+    {label:(platform==='youtube'?'구독자':platform==='instagram'?'팔로워':'팔로워+구독자'),
+     value:fmt(audNow),
+     delta:audDelta, sub:`${audDelta>=0?'+':''}${fmt(audDelta)} (${audPct.toFixed(1)}%)`},
+    {label:'총 조회수', value:fmt(viewsSum), delta:null, sub:'계정 기준·기간 합계'},
+    {label:'총 도달', value:fmt(reachSum||0), delta:null, sub: reachSum?'계정 기준·기간 합계':'IG 기준 (YT 미집계)'},
+    {label:'평균 참여율', value:engAvg.toFixed(1)+'%', delta:null, sub:'게시물 평균'},
+    {label:'프로필 방문', value: platform==='youtube'?'–':fmt(profileSum), delta:null, sub: platform==='youtube'?'IG 전용 지표':'IG 계정·기간 합계'},
+  ];
+  document.getElementById('kpis').innerHTML=cards.map(c=>{
+    let dCls='flat',arrow='';
+    if(c.delta!==null){dCls=c.delta>0?'up':c.delta<0?'down':'flat';arrow=c.delta>0?'▲ ':c.delta<0?'▼ ':'';}
+    return `<div class="card kpi">
+      <div class="label">${c.label}</div>
+      <div class="value">${c.value}</div>
+      <div class="delta ${dCls}">${arrow}${c.sub}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- 차트 ---------- */
+function lineCfg(labels,datasets){
+  return {type:'line',data:{labels,datasets},options:{
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{color:'#9aa3b0',boxWidth:12}}},
+    scales:{x:{ticks:{color:'#9aa3b0'},grid:{color:'#222'}},
+            y:{ticks:{color:'#9aa3b0'},grid:{color:'#222'}}}
+  }};
+}
+function mk(id,cfg){ if(charts[id])charts[id].destroy(); charts[id]=new Chart(document.getElementById(id),cfg);}
+
+function renderCharts(){
+  const plats=platform==='all'?['instagram','youtube']:[platform];
+  const daily=filterDailyByRange(DAILY);
+  const labels=[...new Set(daily.map(r=>r.date))].sort();
+
+  // 팔로워/구독자
+  mk('audChart',lineCfg(labels,plats.map(p=>({
+    label:p==='instagram'?'IG 팔로워':'YT 구독자',
+    data:labels.map(d=>{const r=daily.find(x=>x.platform===p&&x.date===d);return r?r.audience:null;}),
+    borderColor:PCOLOR[p],backgroundColor:PCOLOR[p],borderDash:PDASH[p],borderWidth:2.5,
+    pointRadius:3,pointHoverRadius:5,tension:.3,spanGaps:true,fill:false
+  }))));
+
+  // 조회수/노출/도달 (선택 플랫폼 합산)
+  const sum=(key)=>labels.map(d=>plats.reduce((s,p)=>{
+    const r=daily.find(x=>x.platform===p&&x.date===d);return s+(r?(r[key]||0):0);},0));
+  mk('reachChart',lineCfg(labels,[
+    {label:'조회수',data:sum('views'),borderColor:'#6aa9ff',backgroundColor:'#6aa9ff22',tension:.3,fill:true},
+    {label:'도달',data:sum('reach'),borderColor:'#22c55e',backgroundColor:'#22c55e22',tension:.3,fill:true},
+  ]));
+
+  // 참여율 추이 (콘텐츠 게시일 기준, 기준일 이후만, 날짜 정렬 + 라벨 뭉침 방지)
+  const engDates=[...new Set(contentFor(plats).map(c=>c.date))].sort();
+  const engByPlat=plats.map(p=>({
+    label:PLABEL[p],
+    data:engDates.map(d=>{
+      const posts=CONTENT.filter(c=>c.platform===p&&c.date===d);
+      if(!posts.length) return null;
+      return +(posts.reduce((s,c)=>s+engRate(c),0)/posts.length).toFixed(2);
+    }),
+    borderColor:PCOLOR[p],borderDash:PDASH[p],borderWidth:2.5,
+    pointRadius:3,tension:.3,spanGaps:true
+  }));
+  mk('engChart',{type:'line',data:{labels:engDates,datasets:engByPlat},options:{
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{color:'#9aa3b0',boxWidth:12}}},
+    scales:{x:{ticks:{color:'#9aa3b0',autoSkip:true,maxTicksLimit:8,maxRotation:0},grid:{color:'#222'}},
+            y:{ticks:{color:'#9aa3b0'},grid:{color:'#222'}}}
+  }});
+
+  // 유형별 평균 조회수 (기준일 이후만)
+  const cont=contentFor(plats);
+  const types={};
+  cont.forEach(c=>{(types[c.type]=types[c.type]||[]).push(c.views);});
+  const tLabels=Object.keys(types);
+  mk('typeChart',{type:'bar',data:{labels:tLabels,datasets:[{
+    label:'평균 조회수',
+    data:tLabels.map(t=>Math.round(types[t].reduce((a,b)=>a+b,0)/types[t].length)),
+    backgroundColor:tLabels.map((_,i)=>['#6aa9ff','#a855f7','#ff3b30','#22c55e','#f5a623'][i%5])
+  }]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:'#9aa3b0'},grid:{display:false}},
+            y:{ticks:{color:'#9aa3b0'},grid:{color:'#222'}}}}});
+}
+
+/* ---------- 랭킹 테이블 ---------- */
+let sortKey='views',sortAsc=false;
+function renderTable(){
+  const plats=platform==='all'?['instagram','youtube']:[platform];
+  let rows=contentFor(plats)
+    .map(c=>({...c,eng:+engRate(c).toFixed(1)}));
+  rows.sort((a,b)=>{
+    let va=a[sortKey],vb=b[sortKey];
+    if(typeof va==='string'){return sortAsc?va.localeCompare(vb):vb.localeCompare(va);}
+    return sortAsc?va-vb:vb-va;
+  });
+  const tb=document.querySelector('#rankTable tbody');
+  tb.innerHTML=rows.map(c=>`<tr>
+    <td>${c.url?`<a class="clink" href="${(''+c.url).replace(/"/g,'%22')}" target="_blank" rel="noopener noreferrer">${c.title} <span class="ext">↗</span></a>`:c.title} <span class="type">· ${c.type}</span></td>
+    <td><span class="badge ${c.platform==='instagram'?'b-ig':'b-yt'}">${c.platform==='instagram'?'IG':'YT'}</span></td>
+    <td>${c.date}</td>
+    <td>${fmt(c.views)}</td>
+    <td>${c.reach?fmt(c.reach):'–'}</td>
+    <td>${fmt(c.likes)}</td>
+    <td>${fmt(c.comments)}</td>
+    <td>${fmt(c.shares)}</td>
+    <td>${c.saves?fmt(c.saves):'–'}</td>
+    <td>${c.eng}%</td>
+  </tr>`).join('');
+  document.querySelectorAll('#rankTable th').forEach(th=>{
+    th.classList.toggle('sorted',th.dataset.k===sortKey);
+    th.classList.toggle('asc',th.dataset.k===sortKey&&sortAsc);
+  });
+}
+
+/* ---------- 렌더 ---------- */
+function renderAll(){renderKPIs();renderCharts();renderTable();}
+
+/* ---------- 이벤트 ---------- */
+document.getElementById('platformSeg').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#platformSeg button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active'); platform=e.target.dataset.p; renderAll();
+});
+document.getElementById('rangeSel').addEventListener('change',e=>{range=e.target.value;renderAll();});
+document.querySelectorAll('#rankTable th').forEach(th=>th.addEventListener('click',()=>{
+  const k=th.dataset.k;
+  if(sortKey===k)sortAsc=!sortAsc;else{sortKey=k;sortAsc=false;}
+  renderTable();
+}));
+function hookFile(id,assign){
+  document.getElementById(id).addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f)return;
+    const rd=new FileReader();
+    rd.onload=()=>{assign(parseCSV(rd.result));
+      document.getElementById('dataStatus').textContent='현재: 업로드된 데이터 표시 중';
+      renderAll();};
+    rd.readAsText(f,'utf-8');
+  });
+}
+hookFile('dailyFile',d=>DAILY=d);
+hookFile('contentFile',d=>CONTENT=d);
+
+/* ---------- 서버로 열렸으면 data/*.csv 자동 로드 (file://이면 샘플 유지) ---------- */
+async function autoLoad(){
+  if(location.protocol==='file:') return; // 더블클릭으로 연 경우 → 샘플 표시
+  try{
+    const [d,c]=await Promise.all([
+      fetch('data/daily.csv',{cache:'no-store'}),
+      fetch('data/content.csv',{cache:'no-store'})
+    ]);
+    if(d.ok){const t=await d.text(); if(t.trim().split(/\r?\n/).length>1) DAILY=parseCSV(t);}
+    if(c.ok){const t=await c.text(); if(t.trim().split(/\r?\n/).length>1) CONTENT=parseCSV(t);}
+    if(d.ok||c.ok){
+      document.getElementById('dataStatus').textContent='현재: 실시간 데이터 자동 로드됨 (data 폴더)';
+      renderAll();
+    }
+  }catch(e){/* data 파일 없으면 샘플 유지 */}
+}
+
+renderAll();
+autoLoad();
+</script>
+</body>
+</html>
