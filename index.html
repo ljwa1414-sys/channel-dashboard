@@ -60,7 +60,32 @@
   .dropzone b{color:var(--text)}
   .legend-note{color:var(--muted);font-size:12px;margin-top:10px}
   .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-  @media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}}
+  /* ---- 상단 탭 ---- */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);padding:0 28px;background:var(--bg)}
+  .tabs button{background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;
+    padding:12px 16px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer}
+  .tabs button:hover{color:var(--text)}
+  .tabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
+  /* ---- 콘텐츠 상세 ---- */
+  .detail-wrap{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+  .plist{max-height:620px;overflow-y:auto}
+  .pitem{padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;border-left:3px solid transparent}
+  .pitem:hover{background:var(--panel2)}
+  .pitem.sel{background:var(--panel2);border-left-color:var(--accent)}
+  .pitem .t{font-size:13px;margin-bottom:4px;line-height:1.35}
+  .pitem .m{font-size:11px;color:var(--muted);display:flex;gap:8px}
+  .dhead{display:flex;gap:10px;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap}
+  .dhead h3{margin:0;font-size:16px;line-height:1.4;flex:1;min-width:200px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:18px}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .stat .l{color:var(--muted);font-size:11px;margin-bottom:6px}
+  .stat .v{font-size:20px;font-weight:700;letter-spacing:-.3px}
+  .stat .s{font-size:11px;color:var(--muted);margin-top:3px}
+  .empty{color:var(--muted);font-size:13px;padding:40px 0;text-align:center}
+  .note{background:rgba(106,169,255,.08);border:1px solid rgba(106,169,255,.25);border-radius:10px;
+    padding:10px 14px;color:var(--muted);font-size:12px;margin-bottom:16px;line-height:1.6}
+  @media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}
+    .detail-wrap{grid-template-columns:1fr}.plist{max-height:300px}}
 </style>
 </head>
 <body>
@@ -82,6 +107,10 @@
     </select>
   </div>
 </header>
+<nav class="tabs" id="tabNav">
+  <button data-v="overview" class="active">📊 개요</button>
+  <button data-v="detail">🎬 콘텐츠 상세</button>
+</nav>
 
 <main>
   <div class="dropzone">
@@ -91,6 +120,7 @@
     <span class="sub" id="dataStatus">현재: 샘플 데이터 표시 중</span>
   </div>
 
+  <section id="viewOverview">
   <div class="kpis" id="kpis"></div>
 
   <div class="grid2">
@@ -139,6 +169,36 @@
     </div>
     <div class="legend-note">참여율 = (좋아요+댓글+공유+저장) ÷ 도달 × 100. 도달 미집계 시 조회수 기준.<br>표의 <b>조회수</b>는 <b>게시물별 누적</b>이라, 상단 KPI의 <b>총 조회수(계정·기간 기준)</b>와는 집계 범위가 다릅니다.</div>
   </div>
+  </section>
+
+  <!-- ================= 콘텐츠 상세 탭 ================= -->
+  <section id="viewDetail" hidden>
+    <div class="detail-wrap">
+      <div class="card" style="padding:0">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--line)">
+          <h3 style="margin:0;font-size:14px">게시물 선택</h3>
+          <span class="sub" id="plistCount"></span>
+        </div>
+        <div class="plist" id="plist"></div>
+      </div>
+      <div class="card" id="pdetail"></div>
+    </div>
+
+    <div class="grid2" style="margin-top:22px">
+      <div class="card chart-card">
+        <h3>계정 팔로워 — 연령대</h3>
+        <div class="chart-wrap"><canvas id="ageChart"></canvas></div>
+      </div>
+      <div class="card chart-card">
+        <h3>계정 팔로워 — 성별 / 지역 TOP</h3>
+        <div class="chart-wrap"><canvas id="genderChart"></canvas></div>
+      </div>
+    </div>
+    <div class="note">
+      ℹ️ <b>연령·성별·지역은 계정 단위 수치입니다.</b> 인스타 앱의 게시물별 &ldquo;타겟&rdquo; 탭(팔로워/비팔로워 비율, 게시물별 연령·국가)은
+      Meta가 API로 제공하지 않아 자동 수집이 불가능합니다 — 그 항목만 앱에서 확인해 주세요.
+    </div>
+  </section>
 </main>
 
 <script>
@@ -344,10 +404,107 @@ function renderTable(){
   });
 }
 
+/* ---------- 콘텐츠 상세 탭 ---------- */
+let DEMO=[];            // demographics.csv (breakdown,label,value)
+let selUrl=null;        // 선택된 게시물
+const secFmt=s=>{s=+s||0;return s>=60?`${Math.floor(s/60)}분 ${Math.round(s%60)}초`:`${s.toFixed(1)}초`;};
+
+function detailList(){
+  const plats=platform==='all'?['instagram','youtube']:[platform];
+  return contentFor(plats).slice().sort((a,b)=>(+b.views||0)-(+a.views||0));
+}
+function renderPList(){
+  const rows=detailList();
+  document.getElementById('plistCount').textContent=`${rows.length}개 · 조회수순`;
+  if(!rows.some(r=>r.url===selUrl)) selUrl=rows[0]?.url||null;
+  document.getElementById('plist').innerHTML=rows.map(c=>`
+    <div class="pitem ${c.url===selUrl?'sel':''}" data-url="${(''+c.url).replace(/"/g,'%22')}">
+      <div class="t">${c.title}</div>
+      <div class="m">
+        <span class="badge ${c.platform==='instagram'?'b-ig':'b-yt'}">${PLABEL[c.platform]}</span>
+        <span>${c.date}</span><span>· ${c.type}</span><span>· 조회 ${fmt(c.views)}</span>
+      </div>
+    </div>`).join('');
+}
+function renderPDetail(){
+  const c=detailList().find(x=>x.url===selUrl);
+  const box=document.getElementById('pdetail');
+  if(!c){box.innerHTML='<div class="empty">표시할 게시물이 없습니다.</div>';return;}
+  const eng=engRate(c);
+  const inter=+c.interactions||((+c.likes||0)+(+c.comments||0)+(+c.shares||0)+(+c.saves||0));
+  const isReel=(+c.avg_watch_sec||0)>0;
+  const stat=(l,v,s)=>`<div class="stat"><div class="l">${l}</div><div class="v">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
+  box.innerHTML=`
+    <div class="dhead">
+      <h3>${c.title}</h3>
+      <span class="badge ${c.platform==='instagram'?'b-ig':'b-yt'}">${PLABEL[c.platform]}</span>
+    </div>
+    <div class="sub" style="margin-bottom:16px">${c.date} · ${c.type}
+      ${c.url?` · <a class="clink" href="${(''+c.url).replace(/"/g,'%22')}" target="_blank" rel="noopener noreferrer">원본 열기 <span class="ext">↗</span></a>`:''}</div>
+    <div class="stats">
+      ${stat('조회수',fmt(c.views))}
+      ${stat('도달',(+c.reach)?fmt(c.reach):'–',(+c.reach)?'':'YT 미집계')}
+      ${stat('총 참여',fmt(inter),'좋아요+댓글+공유+저장')}
+      ${stat('참여율',eng.toFixed(1)+'%',(+c.reach)?'도달 기준':'조회수 기준')}
+      ${isReel?stat('평균 시청시간',secFmt(c.avg_watch_sec),'1인당 평균'):''}
+      ${isReel?stat('총 시청시간',fmt(Math.round(c.total_watch_hours))+'시간','누적'):''}
+    </div>
+    <h3 style="font-size:14px;margin:0 0 12px">상호작용 구성</h3>
+    <div class="chart-wrap" style="height:200px"><canvas id="interChart"></canvas></div>`;
+  const labels=['좋아요','댓글','공유','저장'];
+  const vals=[+c.likes||0,+c.comments||0,+c.shares||0,+c.saves||0];
+  mk('interChart',{type:'bar',data:{labels,datasets:[{data:vals,
+    backgroundColor:['#6aa9ff','#a855f7','#22c55e','#f5a623'],borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#9aa3b0'},grid:{color:'#222'}},
+              y:{ticks:{color:'#9aa3b0'},grid:{display:false}}}}});
+}
+function renderDemographics(){
+  const pick=b=>DEMO.filter(d=>d.breakdown===b).sort((a,b2)=>(+b2.value)-(+a.value));
+  const age=DEMO.filter(d=>d.breakdown==='age').sort((a,b)=>(''+a.label).localeCompare(''+b.label));
+  if(age.length){
+    mk('ageChart',{type:'bar',data:{labels:age.map(d=>d.label),
+      datasets:[{data:age.map(d=>+d.value),backgroundColor:'#a855f7',borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{x:{ticks:{color:'#9aa3b0'},grid:{display:false}},
+                y:{ticks:{color:'#9aa3b0'},grid:{color:'#222'}}}}});
+  }
+  const g=pick('gender'), city=pick('city').slice(0,6);
+  const gLabel={F:'여성',M:'남성',U:'미상'};
+  const labels=[...g.map(d=>gLabel[d.label]||d.label),...city.map(d=>(''+d.label).split(',')[0])];
+  const vals=[...g.map(d=>+d.value),...city.map(d=>+d.value)];
+  if(labels.length){
+    mk('genderChart',{type:'bar',data:{labels,datasets:[{data:vals,
+      backgroundColor:[...g.map(()=>'#6aa9ff'),...city.map(()=>'#22c55e')],borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
+        scales:{x:{ticks:{color:'#9aa3b0'},grid:{color:'#222'}},
+                y:{ticks:{color:'#9aa3b0'},grid:{display:false}}}}});
+  }
+}
+function renderDetailView(){renderPList();renderPDetail();renderDemographics();}
+
 /* ---------- 렌더 ---------- */
-function renderAll(){renderKPIs();renderCharts();renderTable();}
+let view='overview';
+function renderAll(){
+  if(view==='overview'){renderKPIs();renderCharts();renderTable();}
+  else{renderDetailView();}
+}
 
 /* ---------- 이벤트 ---------- */
+document.getElementById('tabNav').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#tabNav button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active'); view=e.target.dataset.v;
+  document.getElementById('viewOverview').hidden = view!=='overview';
+  document.getElementById('viewDetail').hidden   = view!=='detail';
+  document.getElementById('rangeSel').style.display = view==='overview'?'':'none';
+  renderAll();
+});
+document.getElementById('plist').addEventListener('click',e=>{
+  const it=e.target.closest('.pitem'); if(!it)return;
+  selUrl=it.dataset.url; renderPList(); renderPDetail();
+});
 document.getElementById('platformSeg').addEventListener('click',e=>{
   if(e.target.tagName!=='BUTTON')return;
   document.querySelectorAll('#platformSeg button').forEach(b=>b.classList.remove('active'));
@@ -376,12 +533,14 @@ hookFile('contentFile',d=>CONTENT=d);
 async function autoLoad(){
   if(location.protocol==='file:') return; // 더블클릭으로 연 경우 → 샘플 표시
   try{
-    const [d,c]=await Promise.all([
+    const [d,c,g]=await Promise.all([
       fetch('data/daily.csv',{cache:'no-store'}),
-      fetch('data/content.csv',{cache:'no-store'})
+      fetch('data/content.csv',{cache:'no-store'}),
+      fetch('data/demographics.csv',{cache:'no-store'}).catch(()=>({ok:false}))
     ]);
     if(d.ok){const t=await d.text(); if(t.trim().split(/\r?\n/).length>1) DAILY=parseCSV(t);}
     if(c.ok){const t=await c.text(); if(t.trim().split(/\r?\n/).length>1) CONTENT=parseCSV(t);}
+    if(g&&g.ok){const t=await g.text(); if(t.trim().split(/\r?\n/).length>1) DEMO=parseCSV(t);}
     if(d.ok||c.ok){
       document.getElementById('dataStatus').textContent='현재: 실시간 데이터 자동 로드됨 (data 폴더)';
       renderAll();
