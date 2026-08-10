@@ -50,6 +50,7 @@
   .badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
   .b-ig{background:rgba(168,85,247,.18);color:#c99bff}
   .b-yt{background:rgba(255,59,48,.18);color:#ff8a80}
+  .b-post{background:rgba(106,169,255,.18);color:#9dc4ff}
   .type{color:var(--muted);font-size:12px}
   .clink{color:var(--text);text-decoration:none}
   .clink:hover{color:var(--accent);text-decoration:underline}
@@ -213,37 +214,51 @@
 
   <!-- ================= 레퍼런스 탭 (영역만 확보, 계정 전달 후 구현) ================= -->
   <section id="viewRef" hidden>
+    <div class="card" style="margin-bottom:22px">
+      <div class="toolbar">
+        <h3 style="margin:0;flex:1">레퍼런스 계정 현황</h3>
+        <span class="sub" id="refUpdated"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="refAcctTable">
+          <thead><tr>
+            <th>계정</th><th>팔로워</th><th>전일 대비</th><th>총 게시물</th>
+            <th>최근 업로드</th><th>주당 업로드</th><th>릴스 비중</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="card">
-      <h3 style="margin:0 0 10px;font-size:16px">🔍 레퍼런스 계정 탐색</h3>
-      <div class="sub" style="line-height:1.7">
-        추적할 인스타그램 계정을 전달해 주시면 이 영역에 자동 수집 결과가 채워집니다.<br>
-        <span style="color:var(--muted)">현재 상태: <b style="color:var(--text)">영역 확보 완료 · 계정 목록 대기 중</b></span>
-      </div>
-      <div class="grid2" style="margin-top:18px">
-        <div class="card" style="background:var(--panel2)">
-          <h3 style="margin:0 0 10px;font-size:14px">✅ 수집 가능 (검증 완료)</h3>
-          <div class="sub" style="line-height:1.9">
-            · 팔로워 수 &amp; 추이<br>
-            · 총 게시물 수 · 업로드 빈도/주기<br>
-            · 콘텐츠 유형 비중 (릴스 / 피드)<br>
-            · 게시물별 좋아요 · 댓글 · 게시일<br>
-            · 게시물 원본 링크 · 캡션
-          </div>
+      <div class="toolbar">
+        <h3 style="margin:0;flex:1">게시물 탐색</h3>
+        <div class="seg" id="refKindSeg">
+          <button data-k="all" class="active">전체</button>
+          <button data-k="reel">🎬 릴스</button>
+          <button data-k="post">🖼 일반 게시물</button>
         </div>
-        <div class="card" style="background:var(--panel2)">
-          <h3 style="margin:0 0 10px;font-size:14px">❌ 수집 불가 (타사 비공개)</h3>
-          <div class="sub" style="line-height:1.9">
-            · 조회수 · 도달 · 노출<br>
-            · 저장 · 공유 수<br>
-            · 시청시간 · 인구통계<br>
-            <span style="color:var(--accent)">→ 좋아요 · 댓글로 성과를 비교합니다</span>
-          </div>
-        </div>
+        <select id="refAcctSel"><option value="all">모든 계정</option></select>
+        <select id="refSortSel">
+          <option value="date">최신순</option>
+          <option value="likes">좋아요순</option>
+          <option value="comments">댓글순</option>
+        </select>
       </div>
-      <div class="note" style="margin-top:18px;margin-bottom:0">
-        ℹ️ 대상은 <b>공개 비즈니스/크리에이터 계정</b>만 가능합니다(비공개·개인 계정 조회 불가).
-        핸들(<code>@아이디</code>) 형태로 5~10개 정도 전달해 주세요.
+      <div style="overflow-x:auto">
+        <table id="refTable">
+          <thead><tr>
+            <th>콘텐츠</th><th>계정</th><th>구분</th><th>게시일</th><th>좋아요</th><th>댓글</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
       </div>
+      <div class="legend-note" id="refCount"></div>
+    </div>
+
+    <div class="note" style="margin-top:22px">
+      ℹ️ 타사 계정은 <b>조회수 · 도달 · 저장 · 공유가 비공개</b>라 수집이 불가능합니다 — <b>좋아요 · 댓글</b>로 성과를 비교합니다.
+      제목을 클릭하면 원본 게시물이 열립니다. 매일 <b>09:00 · 17:00</b> 자동 수집됩니다.
     </div>
   </section>
 </main>
@@ -537,11 +552,78 @@ function renderDemographics(){
 }
 function renderDetailView(){renderPList();renderPDetail();renderDemographics();}
 
+/* ---------- 레퍼런스 탭 ---------- */
+let REF_ACCT=[], REF_CONTENT=[];
+let refKind='all', refAcct='all', refSort='date';
+const linkify=(title,url)=> url
+  ? `<a class="clink" href="${(''+url).replace(/"/g,'%22')}" target="_blank" rel="noopener noreferrer">${title} <span class="ext">↗</span></a>`
+  : title;
+
+function renderRefAccounts(){
+  const dates=[...new Set(REF_ACCT.map(r=>r.date))].sort();
+  const latest=dates[dates.length-1], prev=dates[dates.length-2];
+  document.getElementById('refUpdated').textContent=latest?`기준일 ${latest}`:'';
+  const rows=REF_ACCT.filter(r=>r.date===latest);
+  document.querySelector('#refAcctTable tbody').innerHTML=rows.map(r=>{
+    const before=prev?REF_ACCT.find(x=>x.date===prev&&x.username===r.username):null;
+    const d=before?(+r.followers)-(+before.followers):null;
+    const dTxt=d===null?'<span class="type">–</span>'
+      :`<span class="delta ${d>0?'up':d<0?'down':'flat'}">${d>0?'▲ +':d<0?'▼ ':''}${fmt(Math.abs(d))}</span>`;
+    // 이 계정 게시물 기준 업로드 빈도 / 릴스 비중
+    const cs=REF_CONTENT.filter(c=>c.username===r.username);
+    const ds=cs.map(c=>c.date).sort();
+    let perWeek='–';
+    if(ds.length>1){
+      const span=(new Date(ds[ds.length-1])-new Date(ds[0]))/86400000;
+      if(span>0) perWeek=(cs.length/span*7).toFixed(1)+'회';
+    }
+    const reels=cs.filter(c=>c.kind==='reel').length;
+    const ratio=cs.length?Math.round(reels/cs.length*100):0;
+    return `<tr>
+      <td><a class="clink" href="https://www.instagram.com/${r.username}/" target="_blank" rel="noopener noreferrer">${r.label} <span class="ext">↗</span></a>
+          <span class="type">@${r.username}</span></td>
+      <td>${fmt(r.followers)}</td>
+      <td>${dTxt}</td>
+      <td>${fmt(r.media_count)}</td>
+      <td>${ds[ds.length-1]||'–'}</td>
+      <td>${perWeek}</td>
+      <td>${cs.length?ratio+'%':'–'} <span class="type">(${reels}/${cs.length})</span></td>
+    </tr>`;
+  }).join('');
+  // 계정 선택 드롭다운 채우기
+  const sel=document.getElementById('refAcctSel');
+  if(sel.options.length<=1){
+    rows.forEach(r=>{const o=document.createElement('option');o.value=r.username;o.textContent=r.label;sel.appendChild(o);});
+  }
+}
+function renderRefContent(){
+  let rows=REF_CONTENT.slice();
+  if(refKind!=='all') rows=rows.filter(c=>c.kind===refKind);
+  if(refAcct!=='all') rows=rows.filter(c=>c.username===refAcct);
+  if(refSort==='date')     rows.sort((a,b)=>(''+b.date).localeCompare(''+a.date));
+  if(refSort==='likes')    rows.sort((a,b)=>(+b.likes||0)-(+a.likes||0));
+  if(refSort==='comments') rows.sort((a,b)=>(+b.comments||0)-(+a.comments||0));
+  rows=rows.slice(0,150);
+  document.querySelector('#refTable tbody').innerHTML=rows.map(c=>`<tr>
+    <td>${linkify(c.title,c.url)} <span class="type">· ${c.type}</span></td>
+    <td><span class="type">${c.label}</span></td>
+    <td>${c.kind==='reel'?'<span class="badge b-ig">🎬 릴스</span>':'<span class="badge b-post">🖼 게시물</span>'}</td>
+    <td>${c.date}</td>
+    <td>${fmt(c.likes)}</td>
+    <td>${fmt(c.comments)}</td>
+  </tr>`).join('');
+  const total=REF_CONTENT.filter(c=>(refKind==='all'||c.kind===refKind)&&(refAcct==='all'||c.username===refAcct)).length;
+  document.getElementById('refCount').textContent=
+    `${fmt(total)}개 중 상위 ${fmt(rows.length)}개 표시 · 타사 계정은 조회수·저장·공유가 비공개라 좋아요·댓글로 비교합니다.`;
+}
+function renderRefView(){renderRefAccounts();renderRefContent();}
+
 /* ---------- 렌더 ---------- */
 let view='overview';
 function renderAll(){
   if(view==='overview'){renderKPIs();renderCharts();renderTable();}
-  else{renderDetailView();}
+  else if(view==='detail'){renderDetailView();}
+  else{renderRefView();}
 }
 
 /* ---------- 이벤트 ---------- */
@@ -556,6 +638,7 @@ document.getElementById('tabNav').addEventListener('click',e=>{
   const showHeader = view==='overview';
   document.getElementById('rangeSel').style.display    = showHeader?'':'none';
   document.getElementById('platformSeg').style.display = showHeader?'':'none';
+  document.querySelector('.dropzone').style.display    = showHeader?'':'none';
   renderAll();
 });
 document.getElementById('plist').addEventListener('click',e=>{
@@ -571,6 +654,13 @@ document.getElementById('dPlatSeg').addEventListener('click',e=>{
 document.getElementById('dSortSel').addEventListener('change',e=>{
   dSort=e.target.value; renderPList(); renderPDetail();
 });
+document.getElementById('refKindSeg').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#refKindSeg button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active'); refKind=e.target.dataset.k; renderRefContent();
+});
+document.getElementById('refAcctSel').addEventListener('change',e=>{refAcct=e.target.value;renderRefContent();});
+document.getElementById('refSortSel').addEventListener('change',e=>{refSort=e.target.value;renderRefContent();});
 document.getElementById('platformSeg').addEventListener('click',e=>{
   if(e.target.tagName!=='BUTTON')return;
   document.querySelectorAll('#platformSeg button').forEach(b=>b.classList.remove('active'));
@@ -599,14 +689,20 @@ hookFile('contentFile',d=>CONTENT=d);
 async function autoLoad(){
   if(location.protocol==='file:') return; // 더블클릭으로 연 경우 → 샘플 표시
   try{
-    const [d,c,g]=await Promise.all([
+    const safe=u=>fetch(u,{cache:'no-store'}).catch(()=>({ok:false}));
+    const [d,c,g,ra,rc]=await Promise.all([
       fetch('data/daily.csv',{cache:'no-store'}),
       fetch('data/content.csv',{cache:'no-store'}),
-      fetch('data/demographics.csv',{cache:'no-store'}).catch(()=>({ok:false}))
+      safe('data/demographics.csv'),
+      safe('data/reference_accounts.csv'),
+      safe('data/reference_content.csv')
     ]);
-    if(d.ok){const t=await d.text(); if(t.trim().split(/\r?\n/).length>1) DAILY=parseCSV(t);}
-    if(c.ok){const t=await c.text(); if(t.trim().split(/\r?\n/).length>1) CONTENT=parseCSV(t);}
-    if(g&&g.ok){const t=await g.text(); if(t.trim().split(/\r?\n/).length>1) DEMO=parseCSV(t);}
+    const txt=async r=>{if(!r||!r.ok)return null;const t=await r.text();return t.trim().split(/\r?\n/).length>1?t:null;};
+    const td=await txt(d); if(td) DAILY=parseCSV(td);
+    const tc=await txt(c); if(tc) CONTENT=parseCSV(tc);
+    const tg=await txt(g); if(tg) DEMO=parseCSV(tg);
+    const tra=await txt(ra); if(tra) REF_ACCT=parseCSV(tra);
+    const trc=await txt(rc); if(trc) REF_CONTENT=parseCSV(trc);
     if(d.ok||c.ok){
       document.getElementById('dataStatus').textContent='현재: 실시간 데이터 자동 로드됨 (data 폴더)';
       renderAll();
