@@ -110,6 +110,7 @@
 <nav class="tabs" id="tabNav">
   <button data-v="overview" class="active">📊 개요</button>
   <button data-v="detail">🎬 콘텐츠 상세</button>
+  <button data-v="ref">🔍 레퍼런스</button>
 </nav>
 
 <main>
@@ -176,8 +177,18 @@
     <div class="detail-wrap">
       <div class="card" style="padding:0">
         <div style="padding:14px 16px;border-bottom:1px solid var(--line)">
-          <h3 style="margin:0;font-size:14px">게시물 선택</h3>
-          <span class="sub" id="plistCount"></span>
+          <h3 style="margin:0 0 10px;font-size:14px">게시물 선택</h3>
+          <div class="seg" id="dPlatSeg" style="margin-bottom:8px">
+            <button data-p="all" class="active">전체</button>
+            <button data-p="instagram">IG</button>
+            <button data-p="youtube">YT</button>
+          </div>
+          <select id="dSortSel" style="width:100%">
+            <option value="date">최신 업로드순</option>
+            <option value="views">조회수순</option>
+            <option value="eng">참여율순</option>
+          </select>
+          <div class="sub" id="plistCount" style="margin-top:8px"></div>
         </div>
         <div class="plist" id="plist"></div>
       </div>
@@ -197,6 +208,42 @@
     <div class="note">
       ℹ️ <b>연령·성별·지역은 계정 단위 수치입니다.</b> 인스타 앱의 게시물별 &ldquo;타겟&rdquo; 탭(팔로워/비팔로워 비율, 게시물별 연령·국가)은
       Meta가 API로 제공하지 않아 자동 수집이 불가능합니다 — 그 항목만 앱에서 확인해 주세요.
+    </div>
+  </section>
+
+  <!-- ================= 레퍼런스 탭 (영역만 확보, 계정 전달 후 구현) ================= -->
+  <section id="viewRef" hidden>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:16px">🔍 레퍼런스 계정 탐색</h3>
+      <div class="sub" style="line-height:1.7">
+        추적할 인스타그램 계정을 전달해 주시면 이 영역에 자동 수집 결과가 채워집니다.<br>
+        <span style="color:var(--muted)">현재 상태: <b style="color:var(--text)">영역 확보 완료 · 계정 목록 대기 중</b></span>
+      </div>
+      <div class="grid2" style="margin-top:18px">
+        <div class="card" style="background:var(--panel2)">
+          <h3 style="margin:0 0 10px;font-size:14px">✅ 수집 가능 (검증 완료)</h3>
+          <div class="sub" style="line-height:1.9">
+            · 팔로워 수 &amp; 추이<br>
+            · 총 게시물 수 · 업로드 빈도/주기<br>
+            · 콘텐츠 유형 비중 (릴스 / 피드)<br>
+            · 게시물별 좋아요 · 댓글 · 게시일<br>
+            · 게시물 원본 링크 · 캡션
+          </div>
+        </div>
+        <div class="card" style="background:var(--panel2)">
+          <h3 style="margin:0 0 10px;font-size:14px">❌ 수집 불가 (타사 비공개)</h3>
+          <div class="sub" style="line-height:1.9">
+            · 조회수 · 도달 · 노출<br>
+            · 저장 · 공유 수<br>
+            · 시청시간 · 인구통계<br>
+            <span style="color:var(--accent)">→ 좋아요 · 댓글로 성과를 비교합니다</span>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:18px;margin-bottom:0">
+        ℹ️ 대상은 <b>공개 비즈니스/크리에이터 계정</b>만 가능합니다(비공개·개인 계정 조회 불가).
+        핸들(<code>@아이디</code>) 형태로 5~10개 정도 전달해 주세요.
+      </div>
     </div>
   </section>
 </main>
@@ -409,13 +456,19 @@ let DEMO=[];            // demographics.csv (breakdown,label,value)
 let selUrl=null;        // 선택된 게시물
 const secFmt=s=>{s=+s||0;return s>=60?`${Math.floor(s/60)}분 ${Math.round(s%60)}초`:`${s.toFixed(1)}초`;};
 
+let dPlatform='all', dSort='date';   // 상세 탭 전용 필터·정렬 (개요 탭과 독립)
+const SORT_LABEL={date:'최신 업로드순',views:'조회수순',eng:'참여율순'};
 function detailList(){
-  const plats=platform==='all'?['instagram','youtube']:[platform];
-  return contentFor(plats).slice().sort((a,b)=>(+b.views||0)-(+a.views||0));
+  const plats=dPlatform==='all'?['instagram','youtube']:[dPlatform];
+  const rows=contentFor(plats).slice();
+  if(dSort==='date')  rows.sort((a,b)=>(''+b.date).localeCompare(''+a.date));
+  if(dSort==='views') rows.sort((a,b)=>(+b.views||0)-(+a.views||0));
+  if(dSort==='eng')   rows.sort((a,b)=>engRate(b)-engRate(a));
+  return rows;
 }
 function renderPList(){
   const rows=detailList();
-  document.getElementById('plistCount').textContent=`${rows.length}개 · 조회수순`;
+  document.getElementById('plistCount').textContent=`${rows.length}개 · ${SORT_LABEL[dSort]}`;
   if(!rows.some(r=>r.url===selUrl)) selUrl=rows[0]?.url||null;
   document.getElementById('plist').innerHTML=rows.map(c=>`
     <div class="pitem ${c.url===selUrl?'sel':''}" data-url="${(''+c.url).replace(/"/g,'%22')}">
@@ -498,12 +551,25 @@ document.getElementById('tabNav').addEventListener('click',e=>{
   e.target.classList.add('active'); view=e.target.dataset.v;
   document.getElementById('viewOverview').hidden = view!=='overview';
   document.getElementById('viewDetail').hidden   = view!=='detail';
-  document.getElementById('rangeSel').style.display = view==='overview'?'':'none';
+  document.getElementById('viewRef').hidden      = view!=='ref';
+  // 개요 탭에서만 헤더 필터 노출 (상세 탭은 자체 필터 사용)
+  const showHeader = view==='overview';
+  document.getElementById('rangeSel').style.display    = showHeader?'':'none';
+  document.getElementById('platformSeg').style.display = showHeader?'':'none';
   renderAll();
 });
 document.getElementById('plist').addEventListener('click',e=>{
   const it=e.target.closest('.pitem'); if(!it)return;
   selUrl=it.dataset.url; renderPList(); renderPDetail();
+});
+document.getElementById('dPlatSeg').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#dPlatSeg button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active'); dPlatform=e.target.dataset.p;
+  selUrl=null; renderPList(); renderPDetail();
+});
+document.getElementById('dSortSel').addEventListener('change',e=>{
+  dSort=e.target.value; renderPList(); renderPDetail();
 });
 document.getElementById('platformSeg').addEventListener('click',e=>{
   if(e.target.tagName!=='BUTTON')return;
