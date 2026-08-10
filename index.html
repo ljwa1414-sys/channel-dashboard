@@ -51,6 +51,29 @@
   .b-ig{background:rgba(168,85,247,.18);color:#c99bff}
   .b-yt{background:rgba(255,59,48,.18);color:#ff8a80}
   .b-post{background:rgba(106,169,255,.18);color:#9dc4ff}
+  /* ---- 레퍼런스: 계정 카드 ---- */
+  .acct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:14px}
+  .acct-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .acct-card .nm{font-size:14px;font-weight:700;margin-bottom:2px}
+  .acct-card .nm a{color:var(--text);text-decoration:none}
+  .acct-card .nm a:hover{color:var(--accent)}
+  .acct-card .un{font-size:11px;color:var(--muted);margin-bottom:14px}
+  .acct-card .fwrow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .acct-card .fw{font-size:25px;font-weight:800;letter-spacing:-.5px}
+  .acct-card .fwl{font-size:11px;color:var(--muted);margin-top:2px}
+  .acct-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 8px;
+    margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+  .acct-meta span{font-size:11px;color:var(--muted)}
+  .acct-meta b{display:block;font-size:13px;color:var(--text);font-weight:600;margin-top:3px}
+  .ratio{display:block;width:100%;height:5px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}
+  .ratio i{display:block;height:100%;background:#a855f7;border-radius:3px}
+  /* ---- 레퍼런스: 게시물 표 (가독성) ---- */
+  #refTable th,#refTable td{padding:14px 14px;vertical-align:middle;text-align:left}
+  #refTable th.num,#refTable td.num{text-align:right}
+  #refTable td.ctitle{white-space:normal;max-width:560px;line-height:1.55;font-size:13.5px}
+  #refTable td.num{font-size:14px;font-weight:600}
+  #refTable tbody tr:hover{background:var(--panel2)}
+  #refTable td.kind{white-space:nowrap;width:96px}
   .type{color:var(--muted);font-size:12px}
   .clink{color:var(--text);text-decoration:none}
   .clink:hover{color:var(--accent);text-decoration:underline}
@@ -219,15 +242,7 @@
         <h3 style="margin:0;flex:1">레퍼런스 계정 현황</h3>
         <span class="sub" id="refUpdated"></span>
       </div>
-      <div style="overflow-x:auto">
-        <table id="refAcctTable">
-          <thead><tr>
-            <th>계정</th><th>팔로워</th><th>직전 대비</th><th>총 게시물</th>
-            <th>최근 업로드</th><th>주당 업로드</th><th>릴스 비중</th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div class="acct-grid" id="refAcctGrid"></div>
     </div>
 
     <div class="card">
@@ -238,6 +253,12 @@
           <button data-k="reel">🎬 릴스</button>
           <button data-k="post">🖼 일반 게시물</button>
         </div>
+        <select id="refDaysSel">
+          <option value="7" selected>최근 7일</option>
+          <option value="14">최근 14일</option>
+          <option value="30">최근 30일</option>
+          <option value="all">전체</option>
+        </select>
         <select id="refAcctSel"><option value="all">모든 계정</option></select>
         <select id="refSortSel">
           <option value="date">최신순</option>
@@ -248,7 +269,8 @@
       <div style="overflow-x:auto">
         <table id="refTable">
           <thead><tr>
-            <th>콘텐츠</th><th>계정</th><th>구분</th><th>게시일</th><th>좋아요</th><th>댓글</th>
+            <th>구분</th><th>콘텐츠</th><th>계정</th><th>게시일</th>
+            <th class="num">좋아요</th><th class="num">댓글</th>
           </tr></thead>
           <tbody></tbody>
         </table>
@@ -554,7 +576,7 @@ function renderDetailView(){renderPList();renderPDetail();renderDemographics();}
 
 /* ---------- 레퍼런스 탭 ---------- */
 let REF_ACCT=[], REF_CONTENT=[];
-let refKind='all', refAcct='all', refSort='date';
+let refKind='all', refAcct='all', refSort='date', refDays='7';
 const linkify=(title,url)=> url
   ? `<a class="clink" href="${(''+url).replace(/"/g,'%22')}" target="_blank" rel="noopener noreferrer">${title} <span class="ext">↗</span></a>`
   : title;
@@ -566,12 +588,12 @@ function renderRefAccounts(){
   const latest=stamps[stamps.length-1], prev=stamps[stamps.length-2];
   document.getElementById('refUpdated').textContent=
     latest?`최근 수집 ${latest}${prev?` · 직전 ${prev} 대비`:' · 첫 수집(다음 회차부터 증감 표시)'}`:'';
-  const rows=REF_ACCT.filter(r=>key(r)===latest);
-  document.querySelector('#refAcctTable tbody').innerHTML=rows.map(r=>{
+  const rows=REF_ACCT.filter(r=>key(r)===latest).sort((a,b)=>(+b.followers)-(+a.followers));
+  document.getElementById('refAcctGrid').innerHTML=rows.map(r=>{
     const before=prev?REF_ACCT.find(x=>key(x)===prev&&x.username===r.username):null;
     const d=before?(+r.followers)-(+before.followers):null;
-    const dTxt=d===null?'<span class="type">–</span>'
-      :`<span class="delta ${d>0?'up':d<0?'down':'flat'}">${d>0?'▲ +':d<0?'▼ ':''}${fmt(Math.abs(d))}</span>`;
+    const dTxt=d===null?'<span class="type">첫 수집</span>'
+      :`<span class="delta ${d>0?'up':d<0?'down':'flat'}">${d>0?'▲ +':d<0?'▼ ':''}${d===0?'변동 없음':fmt(Math.abs(d))}</span>`;
     // 이 계정 게시물 기준 업로드 빈도 / 릴스 비중
     const cs=REF_CONTENT.filter(c=>c.username===r.username);
     const ds=cs.map(c=>c.date).sort();
@@ -582,16 +604,19 @@ function renderRefAccounts(){
     }
     const reels=cs.filter(c=>c.kind==='reel').length;
     const ratio=cs.length?Math.round(reels/cs.length*100):0;
-    return `<tr>
-      <td><a class="clink" href="https://www.instagram.com/${r.username}/" target="_blank" rel="noopener noreferrer">${r.label} <span class="ext">↗</span></a>
-          <span class="type">@${r.username}</span></td>
-      <td>${fmt(r.followers)}</td>
-      <td>${dTxt}</td>
-      <td>${fmt(r.media_count)}</td>
-      <td>${ds[ds.length-1]||'–'}</td>
-      <td>${perWeek}</td>
-      <td>${cs.length?ratio+'%':'–'} <span class="type">(${reels}/${cs.length})</span></td>
-    </tr>`;
+    return `<div class="acct-card">
+      <div class="nm"><a href="https://www.instagram.com/${r.username}/" target="_blank" rel="noopener noreferrer">${r.label} <span class="ext">↗</span></a></div>
+      <div class="un">@${r.username}</div>
+      <div class="fwrow"><div class="fw">${fmt(r.followers)}</div>${dTxt}</div>
+      <div class="fwl">팔로워</div>
+      <div class="acct-meta">
+        <span>총 게시물<b>${fmt(r.media_count)}</b></span>
+        <span>주당 업로드<b>${perWeek}</b></span>
+        <span>최근 업로드<b>${ds[ds.length-1]||'–'}</b></span>
+        <span>릴스 비중<b>${cs.length?ratio+'%':'–'} <span class="type">(${reels}/${cs.length})</span></b>
+          <span class="ratio"><i style="width:${ratio}%"></i></span></span>
+      </div>
+    </div>`;
   }).join('');
   // 계정 선택 드롭다운 채우기
   const sel=document.getElementById('refAcctSel');
@@ -599,25 +624,40 @@ function renderRefAccounts(){
     rows.forEach(r=>{const o=document.createElement('option');o.value=r.username;o.textContent=r.label;sel.appendChild(o);});
   }
 }
-function renderRefContent(){
+function refFiltered(){
   let rows=REF_CONTENT.slice();
+  if(refDays!=='all'){                       // 당일 기준 최근 N일
+    const cut=new Date(); cut.setDate(cut.getDate()-Number(refDays));
+    const cutStr=cut.toISOString().slice(0,10);
+    rows=rows.filter(c=>(''+c.date)>=cutStr);
+  }
   if(refKind!=='all') rows=rows.filter(c=>c.kind===refKind);
   if(refAcct!=='all') rows=rows.filter(c=>c.username===refAcct);
+  return rows;
+}
+function renderRefContent(){
+  let rows=refFiltered();
+  const total=rows.length;
   if(refSort==='date')     rows.sort((a,b)=>(''+b.date).localeCompare(''+a.date));
   if(refSort==='likes')    rows.sort((a,b)=>(+b.likes||0)-(+a.likes||0));
   if(refSort==='comments') rows.sort((a,b)=>(+b.comments||0)-(+a.comments||0));
   rows=rows.slice(0,150);
-  document.querySelector('#refTable tbody').innerHTML=rows.map(c=>`<tr>
-    <td>${linkify(c.title,c.url)} <span class="type">· ${c.type}</span></td>
-    <td><span class="type">${c.label}</span></td>
-    <td>${c.kind==='reel'?'<span class="badge b-ig">🎬 릴스</span>':'<span class="badge b-post">🖼 게시물</span>'}</td>
-    <td>${c.date}</td>
-    <td>${fmt(c.likes)}</td>
-    <td>${fmt(c.comments)}</td>
-  </tr>`).join('');
-  const total=REF_CONTENT.filter(c=>(refKind==='all'||c.kind===refKind)&&(refAcct==='all'||c.username===refAcct)).length;
+  const tb=document.querySelector('#refTable tbody');
+  if(!rows.length){
+    tb.innerHTML='<tr><td colspan="6" class="empty">해당 기간에 게시물이 없습니다. 기간을 넓혀보세요.</td></tr>';
+  }else{
+    tb.innerHTML=rows.map(c=>`<tr>
+      <td class="kind">${c.kind==='reel'?'<span class="badge b-ig">🎬 릴스</span>':'<span class="badge b-post">🖼 게시물</span>'}</td>
+      <td class="ctitle">${linkify(c.title,c.url)}</td>
+      <td><span class="type">${c.label}</span></td>
+      <td><span class="type">${c.date}</span></td>
+      <td class="num">${fmt(c.likes)}</td>
+      <td class="num">${fmt(c.comments)}</td>
+    </tr>`).join('');
+  }
+  const dLabel=refDays==='all'?'전체 기간':`최근 ${refDays}일`;
   document.getElementById('refCount').textContent=
-    `${fmt(total)}개 중 상위 ${fmt(rows.length)}개 표시 · 타사 계정은 조회수·저장·공유가 비공개라 좋아요·댓글로 비교합니다.`;
+    `${dLabel} · ${fmt(total)}개${total>rows.length?` 중 상위 ${fmt(rows.length)}개 표시`:''} · 타사 계정은 조회수·저장·공유가 비공개라 좋아요·댓글로 비교합니다.`;
 }
 function renderRefView(){renderRefAccounts();renderRefContent();}
 
@@ -663,6 +703,7 @@ document.getElementById('refKindSeg').addEventListener('click',e=>{
   e.target.classList.add('active'); refKind=e.target.dataset.k; renderRefContent();
 });
 document.getElementById('refAcctSel').addEventListener('change',e=>{refAcct=e.target.value;renderRefContent();});
+document.getElementById('refDaysSel').addEventListener('change',e=>{refDays=e.target.value;renderRefContent();});
 document.getElementById('refSortSel').addEventListener('change',e=>{refSort=e.target.value;renderRefContent();});
 document.getElementById('platformSeg').addEventListener('click',e=>{
   if(e.target.tagName!=='BUTTON')return;
