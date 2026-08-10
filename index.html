@@ -222,7 +222,7 @@
       <div style="overflow-x:auto">
         <table id="refAcctTable">
           <thead><tr>
-            <th>계정</th><th>팔로워</th><th>전일 대비</th><th>총 게시물</th>
+            <th>계정</th><th>팔로워</th><th>직전 대비</th><th>총 게시물</th>
             <th>최근 업로드</th><th>주당 업로드</th><th>릴스 비중</th>
           </tr></thead>
           <tbody></tbody>
@@ -560,12 +560,15 @@ const linkify=(title,url)=> url
   : title;
 
 function renderRefAccounts(){
-  const dates=[...new Set(REF_ACCT.map(r=>r.date))].sort();
-  const latest=dates[dates.length-1], prev=dates[dates.length-2];
-  document.getElementById('refUpdated').textContent=latest?`기준일 ${latest}`:'';
-  const rows=REF_ACCT.filter(r=>r.date===latest);
+  // 수집 회차(ts) 기준 — 당일 2회차부터 바로 증감 표시
+  const key=r=>r.ts||r.date;
+  const stamps=[...new Set(REF_ACCT.map(key))].sort();
+  const latest=stamps[stamps.length-1], prev=stamps[stamps.length-2];
+  document.getElementById('refUpdated').textContent=
+    latest?`최근 수집 ${latest}${prev?` · 직전 ${prev} 대비`:' · 첫 수집(다음 회차부터 증감 표시)'}`:'';
+  const rows=REF_ACCT.filter(r=>key(r)===latest);
   document.querySelector('#refAcctTable tbody').innerHTML=rows.map(r=>{
-    const before=prev?REF_ACCT.find(x=>x.date===prev&&x.username===r.username):null;
+    const before=prev?REF_ACCT.find(x=>key(x)===prev&&x.username===r.username):null;
     const d=before?(+r.followers)-(+before.followers):null;
     const dTxt=d===null?'<span class="type">–</span>'
       :`<span class="delta ${d>0?'up':d<0?'down':'flat'}">${d>0?'▲ +':d<0?'▼ ':''}${fmt(Math.abs(d))}</span>`;
