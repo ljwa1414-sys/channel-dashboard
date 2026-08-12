@@ -6,9 +6,9 @@ age,35-44,775
 age,45-54,438
 age,55-64,109
 age,65+,58
-gender,F,388
+gender,F,389
 gender,M,740
-gender,U,987
+gender,U,986
 country,DE,2
 country,BD,1
 country,TW,2
@@ -22,8 +22,8 @@ country,SA,1
 country,KZ,2
 country,BR,1
 country,AR,1
-country,AU,1
 country,MA,1
+country,AU,1
 country,PH,1
 country,NG,1
 country,ID,1
@@ -34,19 +34,19 @@ city,"Gyeongsan, Gyeongsangbuk-do",10
 city,"Jeju, Jeju-do",21
 city,"Jinju, Gyeongsangnam-do",11
 city,"Wonju, Gangwon-do",14
-city,"Gwangju, Gwangju",39
+city,"Gwangju, Gwangju",38
 city,"Yongin, Gyeonggi-do",49
 city,"Daegu, Daegu",79
 city,"Osan, Gyeonggi-do",19
 city,"Busan, Busan",118
-city,"Seoul, Seoul",528
-city,"Yangju, Gyeonggi-do",9
+city,"Dangjin, Chungcheongnam-do",9
+city,"Seoul, Seoul",530
 city,"Goyang, Gyeonggi-do",63
 city,"Pohang, Gyeongsangbuk-do",9
 city,"Pocheon, Gyeonggi-do",12
 city,"Geoje, Gyeongsangnam-do",14
 city,"Namyangju, Gyeonggi-do",22
-city,"Shanghai, Shanghai",13
+city,"Shanghai, Shanghai",11
 city,"Gumi, Gyeongsangbuk-do",18
 city,"Gimpo, Gyeonggi-do",19
 city,"Hanam, Gyeonggi-do",12
@@ -54,23 +54,23 @@ city,"Iksan, Jeollabuk-do",14
 city,"Incheon, Incheon",141
 city,"Jeonju, Jeollabuk-do",25
 city,"Hwaseong, Gyeonggi-do",30
-city,"Yangsan, Gyeongsangnam-do",18
+city,"Yangsan, Gyeongsangnam-do",19
 city,"Daejeon, Daejeon",52
 city,"Ansan, Gyeonggi-do",17
-city,"Anyang, Gyeonggi-do",28
+city,"Anyang, Gyeonggi-do",26
 city,"Changwon, Gyeongsangnam-do",55
 city,"Cheonan, Chungcheongnam-do",19
 city,"Cheongju, Chungcheongbuk-do",20
 city,"Bucheon, Gyeonggi-do",45
 city,"Suwon, Gyeonggi-do",56
-city,"Gwangju, Gyeonggi-do",15
+city,"Gwangju, Gyeonggi-do",14
 city,"Ulsan, Ulsan",33
-city,"Pyeongtaek, Gyeonggi-do",20
+city,"Pyeongtaek, Gyeonggi-do",21
 city,"Uijeongbu, Gyeonggi-do",12
 city,"Gimhae, Gyeongsangnam-do",18
 city,"Seongnam, Gyeonggi-do",40
 city,"Chilgok, Gyeongsangbuk-do",11
-city,"Gunpo, Gyeonggi-do",13
+city,"Gunpo, Gyeonggi-do",14
 city,"Siheung, Gyeonggi-do",24
 city,"Gwangmyeong, Gyeonggi-do",16
 city,"Chungju, Chungcheongbuk-do",11
