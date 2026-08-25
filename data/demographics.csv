@@ -1,20 +1,20 @@
 breakdown,label,value
 age,13-17,6
 age,18-24,95
-age,25-34,643
+age,25-34,641
 age,35-44,795
 age,45-54,440
 age,55-64,109
 age,65+,57
-gender,F,396
+gender,F,395
 gender,M,748
-gender,U,1001
+gender,U,1000
 country,DE,2
 country,BD,1
 country,TW,2
 country,IN,2
 country,JP,3
-country,KR,2069
+country,KR,2067
 country,IR,1
 country,PY,1
 country,CN,45
@@ -22,9 +22,9 @@ country,SA,1
 country,KZ,2
 country,BR,1
 country,AR,1
-country,AU,1
-country,MA,1
 country,SG,1
+country,MA,1
+country,AU,1
 country,PH,1
 country,NG,1
 country,ID,1
@@ -39,9 +39,8 @@ city,"Gwangju, Gwangju",37
 city,"Yongin, Gyeonggi-do",46
 city,"Daegu, Daegu",81
 city,"Osan, Gyeonggi-do",19
-city,"Busan, Busan",117
-city,"Dangjin, Chungcheongnam-do",9
-city,"Seoul, Seoul",539
+city,"Busan, Busan",116
+city,"Seoul, Seoul",540
 city,"Goyang, Gyeonggi-do",63
 city,"Pohang, Gyeongsangbuk-do",10
 city,"Pocheon, Gyeonggi-do",12
@@ -75,4 +74,5 @@ city,"Chilgok, Gyeongsangbuk-do",9
 city,"Gunpo, Gyeonggi-do",12
 city,"Siheung, Gyeonggi-do",23
 city,"Gwangmyeong, Gyeonggi-do",16
+city,"Chungju, Chungcheongbuk-do",9
 city,"Paju, Gyeonggi-do",20
