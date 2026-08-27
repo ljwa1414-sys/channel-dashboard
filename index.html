@@ -71,6 +71,26 @@
   .acct-card.own .fw{color:#bcd9ff}
   .own-tag{display:inline-block;background:var(--accent);color:#08121f;font-size:10px;font-weight:800;
     padding:2px 7px;border-radius:5px;margin-left:6px;vertical-align:middle}
+  /* 장르 그룹 (오피셜 / 스텔스) */
+  .gsec{margin-top:20px}
+  .gsec:first-child{margin-top:0}
+  .ghead{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+  .ghead h4{margin:0;font-size:13px;font-weight:700;letter-spacing:-.2px;white-space:nowrap}
+  .ghead .cnt{font-size:11px;color:var(--muted)}
+  .ghead .line{flex:1;height:1px;background:var(--line)}
+  .g-official h4{color:#6aa9ff}
+  .g-stealth  h4{color:#f5a623}
+  .g-own      h4{color:#22c55e}
+  .gtag{display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;margin-left:6px;vertical-align:middle}
+  .gt-official{background:rgba(106,169,255,.16);color:#9dc4ff}
+  .gt-stealth {background:rgba(245,166,35,.16);color:#f7c46c}
+  .acct-card.stealth{border-color:rgba(245,166,35,.35)}
+  /* 장르 비교 요약 */
+  .gcmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+  .gcmp .box{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .gcmp .box .t{font-size:12px;font-weight:700;margin-bottom:10px}
+  .gcmp .box .r{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+  .gcmp .box .r b{color:var(--text);font-size:13px;font-weight:600}
   tr.own-row{background:rgba(106,169,255,.10)}
   tr.own-row:hover{background:rgba(106,169,255,.16)}
   .ratio{display:block;width:100%;height:5px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}
@@ -300,7 +320,8 @@
         <h3 style="margin:0;flex:1">레퍼런스 채널 현황</h3>
         <span class="sub" id="refYtUpdated"></span>
       </div>
-      <div class="acct-grid" id="refYtAcctGrid"></div>
+      <div class="gcmp" id="refYtCompare"></div>
+      <div id="refYtAcctGrid"></div>
       <div class="note" id="refYtEmpty" style="margin:18px 0 0" hidden>
         ℹ️ 아직 <b>레퍼런스 채널이 등록되지 않았습니다</b> — 현재는 자사 채널만 표시됩니다.
         추적할 유튜브 채널을 알려주시면(<code>@핸들</code> 또는 채널 URL) 바로 추가해 드립니다.
@@ -310,6 +331,12 @@
     <div class="card">
       <div class="toolbar">
         <h3 style="margin:0;flex:1">영상 탐색</h3>
+        <div class="seg" id="refYtGenreSeg">
+          <button data-g="all" class="active">전체</button>
+          <button data-g="own">자사</button>
+          <button data-g="official">🏢 오피셜</button>
+          <button data-g="stealth">🕶 스텔스</button>
+        </div>
         <div class="seg" id="refYtKindSeg">
           <button data-k="all" class="active">전체</button>
           <button data-k="short">⚡ 숏츠</button>
@@ -640,7 +667,7 @@ function renderDetailView(){renderPList();renderPDetail();renderDemographics();}
 /* ---------- 레퍼런스 탭 (인스타 / 유튜브 공용) ---------- */
 let REF_ACCT=[], REF_CONTENT=[], REFYT_ACCT=[], REFYT_CONTENT=[];
 let refKind='all', refAcct='all', refSort='date', refDays='7';
-let ryKind='all', ryAcct='all', rySort='date', ryDays='7';
+let ryKind='all', ryAcct='all', rySort='date', ryDays='7', ryGenre='all';
 const linkify=(title,url)=> url
   ? `<a class="clink" href="${(''+url).replace(/"/g,'%22')}" target="_blank" rel="noopener noreferrer">${title} <span class="ext">↗</span></a>`
   : title;
@@ -658,7 +685,7 @@ function renderAcctCards(o){
     if(isOwn(a)!==isOwn(b)) return isOwn(a)?-1:1;
     return (+b[o.audKey])-(+a[o.audKey]);
   });
-  document.getElementById(o.gridId).innerHTML=rows.map(r=>{
+  const cardHtml=r=>{
     const id=r[o.idKey];
     const before=prev?o.acct.find(x=>key(x)===prev&&x[o.idKey]===id):null;
     const d=before?(+r[o.audKey])-(+before[o.audKey]):null;
@@ -674,8 +701,10 @@ function renderAcctCards(o){
     const hit=cs.filter(c=>c.kind===o.ratioKind).length;
     const ratio=cs.length?Math.round(hit/cs.length*100):0;
     const own=isOwn(r);
-    return `<div class="acct-card${own?' own':''}">
-      <div class="nm"><a href="${o.profileUrl(r)}" target="_blank" rel="noopener noreferrer">${r.label} <span class="ext">↗</span></a>${own?'<span class="own-tag">자사</span>':''}</div>
+    const g=r.genre||'';
+    const gTag=(!own&&o.genres)?`<span class="gtag gt-${g==='stealth'?'stealth':'official'}">${g==='stealth'?'스텔스':'오피셜'}</span>`:'';
+    return `<div class="acct-card${own?' own':''}${g==='stealth'?' stealth':''}">
+      <div class="nm"><a href="${o.profileUrl(r)}" target="_blank" rel="noopener noreferrer">${r.label} <span class="ext">↗</span></a>${own?'<span class="own-tag">자사</span>':gTag}</div>
       <div class="un">${o.subLabel(r)}</div>
       <div class="fwrow"><div class="fw">${fmt(r[o.audKey])}</div>${dTxt}</div>
       <div class="fwl">${o.audLabel}</div>
@@ -687,8 +716,49 @@ function renderAcctCards(o){
           <span class="ratio"><i style="width:${ratio}%"></i></span></span>
       </div>
     </div>`;
-  }).join('');
+  };
+  const grid=document.getElementById(o.gridId);
+  if(!o.genres){
+    grid.innerHTML=`<div class="acct-grid">${rows.map(cardHtml).join('')}</div>`;
+  }else{
+    // 자사 → 오피셜 → 스텔스 순으로 구역을 나눠 배치
+    const secs=[
+      {k:'own',      label:'자사 채널',   cls:'g-own',      rows:rows.filter(isOwn)},
+      {k:'official', label:'🏢 오피셜 채널', cls:'g-official', rows:rows.filter(r=>!isOwn(r)&&r.genre!=='stealth')},
+      {k:'stealth',  label:'🕶 스텔스 채널', cls:'g-stealth',  rows:rows.filter(r=>!isOwn(r)&&r.genre==='stealth')},
+    ].filter(s=>s.rows.length);
+    grid.innerHTML=secs.map(s=>`<div class="gsec ${s.cls}">
+      <div class="ghead"><h4>${s.label}</h4><span class="cnt">${s.rows.length}개</span><span class="line"></span></div>
+      <div class="acct-grid">${s.rows.map(cardHtml).join('')}</div>
+    </div>`).join('');
+  }
   return rows;
+}
+
+/* 장르별 평균 성과 비교 (오피셜 vs 스텔스 vs 자사) */
+function renderGenreCompare(){
+  const box=document.getElementById('refYtCompare');
+  const defs=[
+    {k:'own',      label:'자사 채널',      pick:c=>isOwn(c)},
+    {k:'official', label:'🏢 오피셜 채널', pick:c=>!isOwn(c)&&c.genre!=='stealth'},
+    {k:'stealth',  label:'🕶 스텔스 채널', pick:c=>!isOwn(c)&&c.genre==='stealth'},
+  ];
+  const html=defs.map(d=>{
+    const cs=REFYT_CONTENT.filter(d.pick);
+    if(!cs.length) return '';
+    const avg=k=>Math.round(cs.reduce((s,c)=>s+(+c[k]||0),0)/cs.length);
+    const shorts=cs.filter(c=>c.kind==='short').length;
+    const chans=new Set(cs.map(c=>c.channel_id)).size;
+    return `<div class="box">
+      <div class="t">${d.label} <span class="type">· ${chans}개 채널</span></div>
+      <div class="r"><span>영상당 평균 조회수</span><b>${fmt(avg('views'))}</b></div>
+      <div class="r"><span>영상당 평균 좋아요</span><b>${fmt(avg('likes'))}</b></div>
+      <div class="r"><span>숏츠 비중</span><b>${Math.round(shorts/cs.length*100)}%</b></div>
+      <div class="r"><span>수집 영상</span><b>${fmt(cs.length)}개</b></div>
+    </div>`;
+  }).join('');
+  box.innerHTML=html;
+  box.hidden=!html;
 }
 
 /* 콘텐츠 표 — 자사 행 강조 */
@@ -701,6 +771,11 @@ function renderRefRows(o){
   }
   if(o.kind!=='all') rows=rows.filter(c=>c.kind===o.kind);
   if(o.acctSel!=='all') rows=rows.filter(c=>c[o.idKey]===o.acctSel);
+  if(o.genre&&o.genre!=='all'){
+    rows=rows.filter(c=> o.genre==='own' ? isOwn(c)
+      : o.genre==='stealth' ? (!isOwn(c)&&c.genre==='stealth')
+      : (!isOwn(c)&&c.genre!=='stealth'));
+  }
   const total=rows.length;
   if(o.sort==='date') rows.sort((a,b)=>(''+b.date).localeCompare(''+a.date));
   else rows.sort((a,b)=>(+b[o.sort]||0)-(+a[o.sort]||0));
@@ -753,16 +828,17 @@ function renderRefYtAccounts(){
     acct:REFYT_ACCT, content:REFYT_CONTENT, gridId:"refYtAcctGrid", updatedId:"refYtUpdated",
     idKey:"channel_id", audKey:"subscribers", audLabel:"구독자",
     countKey:"video_count", countLabel:"총 영상",
-    ratioKind:"short", ratioLabel:"숏츠 비중",
+    ratioKind:"short", ratioLabel:"숏츠 비중", genres:true,
     profileUrl:r=>"https://www.youtube.com/channel/"+r.channel_id,
     subLabel:r=>"YouTube 채널",
   });
   fillAcctSelect("refYtAcctSel",rows,"channel_id");
   document.getElementById("refYtEmpty").hidden = rows.length>1;
+  renderGenreCompare();
 }
 function renderRefYtContent(){
   renderRefRows({
-    content:REFYT_CONTENT, days:ryDays, kind:ryKind, acctSel:ryAcct, sort:rySort,
+    content:REFYT_CONTENT, days:ryDays, kind:ryKind, acctSel:ryAcct, sort:rySort, genre:ryGenre,
     idKey:"channel_id", tableId:"refYtTable", countId:"refYtCount", cols:7, noun:"영상",
     metrics:["views","likes","comments"],
     kindBadge:c=>c.kind==="short"?"<span class=\"badge b-yt\">⚡ 숏츠</span>":"<span class=\"badge b-post\">🎬 롱폼</span>",
@@ -822,6 +898,11 @@ document.getElementById('refYtKindSeg').addEventListener('click',e=>{
   if(e.target.tagName!=='BUTTON')return;
   document.querySelectorAll('#refYtKindSeg button').forEach(b=>b.classList.remove('active'));
   e.target.classList.add('active'); ryKind=e.target.dataset.k; renderRefYtContent();
+});
+document.getElementById('refYtGenreSeg').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#refYtGenreSeg button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active'); ryGenre=e.target.dataset.g; renderRefYtContent();
 });
 document.getElementById('refYtAcctSel').addEventListener('change',e=>{ryAcct=e.target.value;renderRefYtContent();});
 document.getElementById('refYtDaysSel').addEventListener('change',e=>{ryDays=e.target.value;renderRefYtContent();});
