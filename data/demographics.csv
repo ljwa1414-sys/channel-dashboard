@@ -1,30 +1,30 @@
 breakdown,label,value
 age,13-17,6
-age,18-24,95
+age,18-24,94
 age,25-34,642
-age,35-44,796
-age,45-54,440
+age,35-44,795
+age,45-54,441
 age,55-64,109
 age,65+,57
 gender,F,395
-gender,M,749
+gender,M,748
 gender,U,1001
 country,DE,2
 country,BD,1
 country,TW,2
 country,IN,2
 country,JP,3
-country,KR,2069
-country,PY,1
+country,KR,2068
 country,IR,1
+country,PY,1
 country,CN,45
 country,SA,1
 country,KZ,2
 country,BR,1
 country,AR,1
-country,SG,1
 country,MA,1
 country,AU,1
+country,SG,1
 country,PH,1
 country,NG,1
 country,ID,1
@@ -32,47 +32,47 @@ country,US,2
 country,CA,5
 country,LK,1
 city,"Gyeongsan, Gyeongsangbuk-do",11
-city,"Jeju, Jeju-do",22
+city,"Jeju, Jeju-do",21
 city,"Jinju, Gyeongsangnam-do",11
 city,"Wonju, Gangwon-do",15
 city,"Gwangju, Gwangju",37
-city,"Yongin, Gyeonggi-do",46
-city,"Daegu, Daegu",81
+city,"Yongin, Gyeonggi-do",45
+city,"Daegu, Daegu",82
 city,"Osan, Gyeonggi-do",19
 city,"Busan, Busan",116
-city,"Seoul, Seoul",541
+city,"Dangjin, Chungcheongnam-do",9
+city,"Seoul, Seoul",539
 city,"Goyang, Gyeonggi-do",63
 city,"Pohang, Gyeongsangbuk-do",10
-city,"Pocheon, Gyeonggi-do",12
+city,"Pocheon, Gyeonggi-do",13
 city,"Geoje, Gyeongsangnam-do",13
 city,"Namyangju, Gyeonggi-do",24
-city,"Shanghai, Shanghai",13
+city,"Shanghai, Shanghai",12
 city,"Gimpo, Gyeonggi-do",17
 city,"Gumi, Gyeongsangbuk-do",18
 city,"Hanam, Gyeonggi-do",12
-city,"Iksan, Jeollabuk-do",15
-city,"Incheon, Incheon",145
-city,"Icheon, Gyeonggi-do",9
+city,"Iksan, Jeollabuk-do",16
+city,"Incheon, Incheon",148
 city,"Jeonju, Jeollabuk-do",26
-city,"Hwaseong, Gyeonggi-do",33
-city,"Yangsan, Gyeongsangnam-do",17
+city,"Hwaseong, Gyeonggi-do",32
+city,"Yangsan, Gyeongsangnam-do",16
 city,"Daejeon, Daejeon",56
-city,"Ansan, Gyeonggi-do",17
+city,"Ansan, Gyeonggi-do",16
 city,"Anyang, Gyeonggi-do",28
 city,"Changwon, Gyeongsangnam-do",54
 city,"Cheonan, Chungcheongnam-do",20
-city,"Cheongju, Chungcheongbuk-do",23
-city,"Bucheon, Gyeonggi-do",49
-city,"Suwon, Gyeonggi-do",57
+city,"Cheongju, Chungcheongbuk-do",22
+city,"Bucheon, Gyeonggi-do",47
+city,"Suwon, Gyeonggi-do",58
 city,"Gwangju, Gyeonggi-do",16
 city,"Ulsan, Ulsan",33
-city,"Pyeongtaek, Gyeonggi-do",22
+city,"Pyeongtaek, Gyeonggi-do",23
 city,"Uijeongbu, Gyeonggi-do",11
 city,"Gimhae, Gyeongsangnam-do",20
-city,"Seongnam, Gyeonggi-do",40
+city,"Seongnam, Gyeonggi-do",39
 city,"Chilgok, Gyeongsangbuk-do",9
 city,"Gunpo, Gyeonggi-do",12
-city,"Siheung, Gyeonggi-do",23
-city,"Gwangmyeong, Gyeonggi-do",16
+city,"Siheung, Gyeonggi-do",22
+city,"Gwangmyeong, Gyeonggi-do",17
 city,"Chungju, Chungcheongbuk-do",9
 city,"Paju, Gyeonggi-do",20
