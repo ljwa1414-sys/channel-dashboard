@@ -65,6 +65,14 @@
     margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
   .acct-meta span{font-size:11px;color:var(--muted)}
   .acct-meta b{display:block;font-size:13px;color:var(--text);font-weight:600;margin-top:3px}
+  /* 자사 계정 카드 강조 */
+  .acct-card.own{background:linear-gradient(160deg,rgba(106,169,255,.16),rgba(106,169,255,.05));
+    border-color:rgba(106,169,255,.55);box-shadow:0 0 0 1px rgba(106,169,255,.18)}
+  .acct-card.own .fw{color:#bcd9ff}
+  .own-tag{display:inline-block;background:var(--accent);color:#08121f;font-size:10px;font-weight:800;
+    padding:2px 7px;border-radius:5px;margin-left:6px;vertical-align:middle}
+  tr.own-row{background:rgba(106,169,255,.10)}
+  tr.own-row:hover{background:rgba(106,169,255,.16)}
   .ratio{display:block;width:100%;height:5px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}
   .ratio i{display:block;height:100%;background:#a855f7;border-radius:3px}
   /* ---- 레퍼런스: 게시물 표 (가독성) ---- */
@@ -134,7 +142,8 @@
 <nav class="tabs" id="tabNav">
   <button data-v="overview" class="active">📊 개요</button>
   <button data-v="detail">🎬 콘텐츠 상세</button>
-  <button data-v="ref">🔍 레퍼런스</button>
+  <button data-v="ref">📷 인스타 레퍼런스</button>
+  <button data-v="refyt">▶️ 유튜브 레퍼런스</button>
 </nav>
 
 <main>
@@ -281,6 +290,60 @@
     <div class="note" style="margin-top:22px">
       ℹ️ 타사 계정은 <b>조회수 · 도달 · 저장 · 공유가 비공개</b>라 수집이 불가능합니다 — <b>좋아요 · 댓글</b>로 성과를 비교합니다.
       제목을 클릭하면 원본 게시물이 열립니다. 매일 <b>09:00 · 17:00</b> 자동 수집됩니다.
+    </div>
+  </section>
+
+  <!-- ================= 유튜브 레퍼런스 탭 ================= -->
+  <section id="viewRefYt" hidden>
+    <div class="card" style="margin-bottom:22px">
+      <div class="toolbar">
+        <h3 style="margin:0;flex:1">레퍼런스 채널 현황</h3>
+        <span class="sub" id="refYtUpdated"></span>
+      </div>
+      <div class="acct-grid" id="refYtAcctGrid"></div>
+      <div class="note" id="refYtEmpty" style="margin:18px 0 0" hidden>
+        ℹ️ 아직 <b>레퍼런스 채널이 등록되지 않았습니다</b> — 현재는 자사 채널만 표시됩니다.
+        추적할 유튜브 채널을 알려주시면(<code>@핸들</code> 또는 채널 URL) 바로 추가해 드립니다.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <h3 style="margin:0;flex:1">영상 탐색</h3>
+        <div class="seg" id="refYtKindSeg">
+          <button data-k="all" class="active">전체</button>
+          <button data-k="short">⚡ 숏츠</button>
+          <button data-k="long">🎬 롱폼</button>
+        </div>
+        <select id="refYtDaysSel">
+          <option value="7" selected>최근 7일</option>
+          <option value="14">최근 14일</option>
+          <option value="30">최근 30일</option>
+          <option value="all">전체</option>
+        </select>
+        <select id="refYtAcctSel"><option value="all">모든 채널</option></select>
+        <select id="refYtSortSel">
+          <option value="date">최신순</option>
+          <option value="views">조회수순</option>
+          <option value="likes">좋아요순</option>
+          <option value="comments">댓글순</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="refYtTable">
+          <thead><tr>
+            <th>구분</th><th>영상</th><th>채널</th><th>게시일</th>
+            <th class="num">조회수</th><th class="num">좋아요</th><th class="num">댓글</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="legend-note" id="refYtCount"></div>
+    </div>
+
+    <div class="note" style="margin-top:22px">
+      ℹ️ 유튜브는 인스타와 달리 <b>타 채널도 조회수가 공개</b>되어 조회수까지 비교할 수 있습니다.
+      숏츠/롱폼은 <b>영상 길이 60초 기준</b>으로 자동 구분됩니다. 매일 <b>09:00 · 17:00</b> 자동 수집됩니다.
     </div>
   </section>
 </main>
@@ -574,91 +637,139 @@ function renderDemographics(){
 }
 function renderDetailView(){renderPList();renderPDetail();renderDemographics();}
 
-/* ---------- 레퍼런스 탭 ---------- */
-let REF_ACCT=[], REF_CONTENT=[];
+/* ---------- 레퍼런스 탭 (인스타 / 유튜브 공용) ---------- */
+let REF_ACCT=[], REF_CONTENT=[], REFYT_ACCT=[], REFYT_CONTENT=[];
 let refKind='all', refAcct='all', refSort='date', refDays='7';
+let ryKind='all', ryAcct='all', rySort='date', ryDays='7';
 const linkify=(title,url)=> url
   ? `<a class="clink" href="${(''+url).replace(/"/g,'%22')}" target="_blank" rel="noopener noreferrer">${title} <span class="ext">↗</span></a>`
   : title;
+const isOwn=r=>String(r.is_own)==='1';
 
-function renderRefAccounts(){
-  // 수집 회차(ts) 기준 — 당일 2회차부터 바로 증감 표시
+/* 계정/채널 카드 그리드 — 자사를 항상 맨 앞에 강조 배치 */
+function renderAcctCards(o){
   const key=r=>r.ts||r.date;
-  const stamps=[...new Set(REF_ACCT.map(key))].sort();
+  const stamps=[...new Set(o.acct.map(key))].sort();
   const latest=stamps[stamps.length-1], prev=stamps[stamps.length-2];
-  document.getElementById('refUpdated').textContent=
+  document.getElementById(o.updatedId).textContent=
     latest?`최근 수집 ${latest}${prev?` · 직전 ${prev} 대비`:' · 첫 수집(다음 회차부터 증감 표시)'}`:'';
-  const rows=REF_ACCT.filter(r=>key(r)===latest).sort((a,b)=>(+b.followers)-(+a.followers));
-  document.getElementById('refAcctGrid').innerHTML=rows.map(r=>{
-    const before=prev?REF_ACCT.find(x=>key(x)===prev&&x.username===r.username):null;
-    const d=before?(+r.followers)-(+before.followers):null;
+  // 자사 우선, 그다음 팔로워/구독자 많은 순
+  const rows=o.acct.filter(r=>key(r)===latest).sort((a,b)=>{
+    if(isOwn(a)!==isOwn(b)) return isOwn(a)?-1:1;
+    return (+b[o.audKey])-(+a[o.audKey]);
+  });
+  document.getElementById(o.gridId).innerHTML=rows.map(r=>{
+    const id=r[o.idKey];
+    const before=prev?o.acct.find(x=>key(x)===prev&&x[o.idKey]===id):null;
+    const d=before?(+r[o.audKey])-(+before[o.audKey]):null;
     const dTxt=d===null?'<span class="type">첫 수집</span>'
       :`<span class="delta ${d>0?'up':d<0?'down':'flat'}">${d>0?'▲ +':d<0?'▼ ':''}${d===0?'변동 없음':fmt(Math.abs(d))}</span>`;
-    // 이 계정 게시물 기준 업로드 빈도 / 릴스 비중
-    const cs=REF_CONTENT.filter(c=>c.username===r.username);
+    const cs=o.content.filter(c=>c[o.idKey]===id);
     const ds=cs.map(c=>c.date).sort();
     let perWeek='–';
     if(ds.length>1){
       const span=(new Date(ds[ds.length-1])-new Date(ds[0]))/86400000;
       if(span>0) perWeek=(cs.length/span*7).toFixed(1)+'회';
     }
-    const reels=cs.filter(c=>c.kind==='reel').length;
-    const ratio=cs.length?Math.round(reels/cs.length*100):0;
-    return `<div class="acct-card">
-      <div class="nm"><a href="https://www.instagram.com/${r.username}/" target="_blank" rel="noopener noreferrer">${r.label} <span class="ext">↗</span></a></div>
-      <div class="un">@${r.username}</div>
-      <div class="fwrow"><div class="fw">${fmt(r.followers)}</div>${dTxt}</div>
-      <div class="fwl">팔로워</div>
+    const hit=cs.filter(c=>c.kind===o.ratioKind).length;
+    const ratio=cs.length?Math.round(hit/cs.length*100):0;
+    const own=isOwn(r);
+    return `<div class="acct-card${own?' own':''}">
+      <div class="nm"><a href="${o.profileUrl(r)}" target="_blank" rel="noopener noreferrer">${r.label} <span class="ext">↗</span></a>${own?'<span class="own-tag">자사</span>':''}</div>
+      <div class="un">${o.subLabel(r)}</div>
+      <div class="fwrow"><div class="fw">${fmt(r[o.audKey])}</div>${dTxt}</div>
+      <div class="fwl">${o.audLabel}</div>
       <div class="acct-meta">
-        <span>총 게시물<b>${fmt(r.media_count)}</b></span>
+        <span>${o.countLabel}<b>${fmt(r[o.countKey])}</b></span>
         <span>주당 업로드<b>${perWeek}</b></span>
         <span>최근 업로드<b>${ds[ds.length-1]||'–'}</b></span>
-        <span>릴스 비중<b>${cs.length?ratio+'%':'–'} <span class="type">(${reels}/${cs.length})</span></b>
+        <span>${o.ratioLabel}<b>${cs.length?ratio+'%':'–'} <span class="type">(${hit}/${cs.length})</span></b>
           <span class="ratio"><i style="width:${ratio}%"></i></span></span>
       </div>
     </div>`;
   }).join('');
-  // 계정 선택 드롭다운 채우기
-  const sel=document.getElementById('refAcctSel');
-  if(sel.options.length<=1){
-    rows.forEach(r=>{const o=document.createElement('option');o.value=r.username;o.textContent=r.label;sel.appendChild(o);});
-  }
+  return rows;
 }
-function refFiltered(){
-  let rows=REF_CONTENT.slice();
-  if(refDays!=='all'){                       // 당일 기준 최근 N일
-    const cut=new Date(); cut.setDate(cut.getDate()-Number(refDays));
+
+/* 콘텐츠 표 — 자사 행 강조 */
+function renderRefRows(o){
+  let rows=o.content.slice();
+  if(o.days!=='all'){
+    const cut=new Date(); cut.setDate(cut.getDate()-Number(o.days));
     const cutStr=cut.toISOString().slice(0,10);
     rows=rows.filter(c=>(''+c.date)>=cutStr);
   }
-  if(refKind!=='all') rows=rows.filter(c=>c.kind===refKind);
-  if(refAcct!=='all') rows=rows.filter(c=>c.username===refAcct);
-  return rows;
-}
-function renderRefContent(){
-  let rows=refFiltered();
+  if(o.kind!=='all') rows=rows.filter(c=>c.kind===o.kind);
+  if(o.acctSel!=='all') rows=rows.filter(c=>c[o.idKey]===o.acctSel);
   const total=rows.length;
-  if(refSort==='date')     rows.sort((a,b)=>(''+b.date).localeCompare(''+a.date));
-  if(refSort==='likes')    rows.sort((a,b)=>(+b.likes||0)-(+a.likes||0));
-  if(refSort==='comments') rows.sort((a,b)=>(+b.comments||0)-(+a.comments||0));
+  if(o.sort==='date') rows.sort((a,b)=>(''+b.date).localeCompare(''+a.date));
+  else rows.sort((a,b)=>(+b[o.sort]||0)-(+a[o.sort]||0));
   rows=rows.slice(0,150);
-  const tb=document.querySelector('#refTable tbody');
+  const tb=document.querySelector(`#${o.tableId} tbody`);
   if(!rows.length){
-    tb.innerHTML='<tr><td colspan="6" class="empty">해당 기간에 게시물이 없습니다. 기간을 넓혀보세요.</td></tr>';
+    tb.innerHTML=`<tr><td colspan="${o.cols}" class="empty">해당 기간에 ${o.noun}이 없습니다. 기간을 넓혀보세요.</td></tr>`;
   }else{
-    tb.innerHTML=rows.map(c=>`<tr>
-      <td class="kind">${c.kind==='reel'?'<span class="badge b-ig">🎬 릴스</span>':'<span class="badge b-post">🖼 게시물</span>'}</td>
+    tb.innerHTML=rows.map(c=>`<tr class="${isOwn(c)?'own-row':''}">
+      <td class="kind">${o.kindBadge(c)}</td>
       <td class="ctitle">${linkify(c.title,c.url)}</td>
-      <td><span class="type">${c.label}</span></td>
+      <td><span class="type">${c.label}</span>${isOwn(c)?'<span class="own-tag">자사</span>':''}</td>
       <td><span class="type">${c.date}</span></td>
-      <td class="num">${fmt(c.likes)}</td>
-      <td class="num">${fmt(c.comments)}</td>
+      ${o.metrics.map(m=>`<td class="num">${fmt(c[m])}</td>`).join('')}
     </tr>`).join('');
   }
-  const dLabel=refDays==='all'?'전체 기간':`최근 ${refDays}일`;
-  document.getElementById('refCount').textContent=
-    `${dLabel} · ${fmt(total)}개${total>rows.length?` 중 상위 ${fmt(rows.length)}개 표시`:''} · 타사 계정은 조회수·저장·공유가 비공개라 좋아요·댓글로 비교합니다.`;
+  const dLabel=o.days==='all'?'전체 기간':`최근 ${o.days}일`;
+  document.getElementById(o.countId).textContent=
+    `${dLabel} · ${fmt(total)}개${total>rows.length?` 중 상위 ${fmt(rows.length)}개 표시`:''} · ${o.note}`;
 }
+
+function renderRefAccounts(){
+  const rows=renderAcctCards({
+    acct:REF_ACCT, content:REF_CONTENT, gridId:"refAcctGrid", updatedId:"refUpdated",
+    idKey:"username", audKey:"followers", audLabel:"팔로워",
+    countKey:"media_count", countLabel:"총 게시물",
+    ratioKind:"reel", ratioLabel:"릴스 비중",
+    profileUrl:r=>"https://www.instagram.com/"+r.username+"/",
+    subLabel:r=>"@"+r.username,
+  });
+  fillAcctSelect("refAcctSel",rows,"username");
+}
+function renderRefContent(){
+  renderRefRows({
+    content:REF_CONTENT, days:refDays, kind:refKind, acctSel:refAcct, sort:refSort,
+    idKey:"username", tableId:"refTable", countId:"refCount", cols:6, noun:"게시물",
+    metrics:["likes","comments"],
+    kindBadge:c=>c.kind==="reel"?"<span class=\"badge b-ig\">🎬 릴스</span>":"<span class=\"badge b-post\">🖼 게시물</span>",
+    note:"타사 계정은 조회수·저장·공유가 비공개라 좋아요·댓글로 비교합니다.",
+  });
+}
+function fillAcctSelect(id,rows,key){
+  const sel=document.getElementById(id);
+  if(sel.options.length>1) return;
+  rows.forEach(r=>{const o=document.createElement("option");o.value=r[key];o.textContent=r.label;sel.appendChild(o);});
+}
+/* ---- 유튜브 레퍼런스 ---- */
+function renderRefYtAccounts(){
+  const rows=renderAcctCards({
+    acct:REFYT_ACCT, content:REFYT_CONTENT, gridId:"refYtAcctGrid", updatedId:"refYtUpdated",
+    idKey:"channel_id", audKey:"subscribers", audLabel:"구독자",
+    countKey:"video_count", countLabel:"총 영상",
+    ratioKind:"short", ratioLabel:"숏츠 비중",
+    profileUrl:r=>"https://www.youtube.com/channel/"+r.channel_id,
+    subLabel:r=>"YouTube 채널",
+  });
+  fillAcctSelect("refYtAcctSel",rows,"channel_id");
+  document.getElementById("refYtEmpty").hidden = rows.length>1;
+}
+function renderRefYtContent(){
+  renderRefRows({
+    content:REFYT_CONTENT, days:ryDays, kind:ryKind, acctSel:ryAcct, sort:rySort,
+    idKey:"channel_id", tableId:"refYtTable", countId:"refYtCount", cols:7, noun:"영상",
+    metrics:["views","likes","comments"],
+    kindBadge:c=>c.kind==="short"?"<span class=\"badge b-yt\">⚡ 숏츠</span>":"<span class=\"badge b-post\">🎬 롱폼</span>",
+    note:"유튜브는 타 채널도 조회수가 공개되어 조회수까지 비교할 수 있습니다.",
+  });
+}
+function renderRefYtView(){renderRefYtAccounts();renderRefYtContent();}
 function renderRefView(){renderRefAccounts();renderRefContent();}
 
 /* ---------- 렌더 ---------- */
@@ -666,6 +777,7 @@ let view='overview';
 function renderAll(){
   if(view==='overview'){renderKPIs();renderCharts();renderTable();}
   else if(view==='detail'){renderDetailView();}
+  else if(view==='refyt'){renderRefYtView();}
   else{renderRefView();}
 }
 
@@ -677,6 +789,7 @@ document.getElementById('tabNav').addEventListener('click',e=>{
   document.getElementById('viewOverview').hidden = view!=='overview';
   document.getElementById('viewDetail').hidden   = view!=='detail';
   document.getElementById('viewRef').hidden      = view!=='ref';
+  document.getElementById('viewRefYt').hidden    = view!=='refyt';
   // 개요 탭에서만 헤더 필터 노출 (상세 탭은 자체 필터 사용)
   const showHeader = view==='overview';
   document.getElementById('rangeSel').style.display    = showHeader?'':'none';
@@ -704,6 +817,15 @@ document.getElementById('refKindSeg').addEventListener('click',e=>{
 });
 document.getElementById('refAcctSel').addEventListener('change',e=>{refAcct=e.target.value;renderRefContent();});
 document.getElementById('refDaysSel').addEventListener('change',e=>{refDays=e.target.value;renderRefContent();});
+// 유튜브 레퍼런스 컨트롤
+document.getElementById('refYtKindSeg').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#refYtKindSeg button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active'); ryKind=e.target.dataset.k; renderRefYtContent();
+});
+document.getElementById('refYtAcctSel').addEventListener('change',e=>{ryAcct=e.target.value;renderRefYtContent();});
+document.getElementById('refYtDaysSel').addEventListener('change',e=>{ryDays=e.target.value;renderRefYtContent();});
+document.getElementById('refYtSortSel').addEventListener('change',e=>{rySort=e.target.value;renderRefYtContent();});
 document.getElementById('refSortSel').addEventListener('change',e=>{refSort=e.target.value;renderRefContent();});
 document.getElementById('platformSeg').addEventListener('click',e=>{
   if(e.target.tagName!=='BUTTON')return;
@@ -734,12 +856,14 @@ async function autoLoad(){
   if(location.protocol==='file:') return; // 더블클릭으로 연 경우 → 샘플 표시
   try{
     const safe=u=>fetch(u,{cache:'no-store'}).catch(()=>({ok:false}));
-    const [d,c,g,ra,rc]=await Promise.all([
+    const [d,c,g,ra,rc,rya,ryc]=await Promise.all([
       fetch('data/daily.csv',{cache:'no-store'}),
       fetch('data/content.csv',{cache:'no-store'}),
       safe('data/demographics.csv'),
       safe('data/reference_accounts.csv'),
-      safe('data/reference_content.csv')
+      safe('data/reference_content.csv'),
+      safe('data/reference_yt_accounts.csv'),
+      safe('data/reference_yt_content.csv')
     ]);
     const txt=async r=>{if(!r||!r.ok)return null;const t=await r.text();return t.trim().split(/\r?\n/).length>1?t:null;};
     const td=await txt(d); if(td) DAILY=parseCSV(td);
@@ -747,6 +871,8 @@ async function autoLoad(){
     const tg=await txt(g); if(tg) DEMO=parseCSV(tg);
     const tra=await txt(ra); if(tra) REF_ACCT=parseCSV(tra);
     const trc=await txt(rc); if(trc) REF_CONTENT=parseCSV(trc);
+    const trya=await txt(rya); if(trya) REFYT_ACCT=parseCSV(trya);
+    const tryc=await txt(ryc); if(tryc) REFYT_CONTENT=parseCSV(tryc);
     if(d.ok||c.ok){
       document.getElementById('dataStatus').textContent='현재: 실시간 데이터 자동 로드됨 (data 폴더)';
       renderAll();
