@@ -51,6 +51,8 @@
   .b-ig{background:rgba(168,85,247,.18);color:#c99bff}
   .b-yt{background:rgba(255,59,48,.18);color:#ff8a80}
   .b-post{background:rgba(106,169,255,.18);color:#9dc4ff}
+  .b-ad{background:rgba(245,166,35,.18);color:#f7c46c;margin-left:6px}
+  .vsub{color:var(--muted);font-size:11px;font-weight:500;margin-left:3px}
   /* ---- 레퍼런스: 계정 카드 ---- */
   .acct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:14px}
   .acct-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px}
@@ -221,7 +223,7 @@
         <tbody></tbody>
       </table>
     </div>
-    <div class="legend-note">참여율 = (좋아요+댓글+공유+저장) ÷ 도달 × 100. 도달 미집계 시 조회수 기준.<br>표의 <b>조회수</b>는 <b>게시물별 누적</b>이라, 상단 KPI의 <b>총 조회수(계정·기간 기준)</b>와는 집계 범위가 다릅니다.</div>
+    <div class="legend-note">참여율 = (좋아요+댓글+공유+저장) ÷ 도달 × 100. 도달 미집계 시 조회수 기준.<br>표의 <b>조회수</b>는 <b>게시물별 누적</b>이라, 상단 KPI의 <b>총 조회수(계정·기간 기준)</b>와는 집계 범위가 다릅니다.<br><span class="badge b-ad" style="margin-left:0">📢 광고 집행</span> 게시물은 <b>총조회수(오가닉)</b> 형식으로 표시합니다 — 총조회수 = 오가닉 + 광고로 발생한 추가 조회.</div>
   </div>
   </section>
 
@@ -443,6 +445,18 @@ function engRate(c){
   return ((c.likes+c.comments+c.shares+(c.saves||0))/base*100);
 }
 
+/* ---------- 광고 조회수 (data/ad_media.csv) ----------
+   인스타 API 인사이트는 오가닉만 주므로, 광고 집행 게시물은 광고 성과를 따로 받아 합산한다.
+   c.views 는 항상 "오가닉" 값으로 유지하고, 표시/정렬에만 총조회수를 쓴다. */
+let AD_MAP={};   // 쇼트코드 -> 광고 합계
+const igCode=u=>((''+(u||'')).match(/instagram\.com\/(?:p|reel|reels|tv)\/([^/?#]+)/)||[])[1]||'';
+const adOf=c=>c&&c.platform==='instagram'?AD_MAP[igCode(c.url)]:null;
+const adViews=c=>{const a=adOf(c);return a?(+a.ad_impressions||0):0;};   // 광고 추가 조회수 기준 지표
+const totalViews=c=>(+c.views||0)+adViews(c);
+// 표기: 광고 집행 건은 "총조회수(오가닉)"
+const viewsHtml=c=>adOf(c)?`${fmt(totalViews(c))}<span class="vsub">(${fmt(c.views)})</span>`:fmt(c.views);
+const adBadge=c=>adOf(c)?'<span class="badge b-ad">📢 광고 집행</span>':'';
+
 /* ---------- KPI ---------- */
 function renderKPIs(){
   const plats=platform==='all'?['instagram','youtube']:[platform];
@@ -536,7 +550,7 @@ function renderCharts(){
   // 유형별 평균 조회수 (기준일 이후만)
   const cont=contentFor(plats);
   const types={};
-  cont.forEach(c=>{(types[c.type]=types[c.type]||[]).push(c.views);});
+  cont.forEach(c=>{(types[c.type]=types[c.type]||[]).push(totalViews(c));});   // 광고 포함
   const tLabels=Object.keys(types);
   mk('typeChart',{type:'bar',data:{labels:tLabels,datasets:[{
     label:'평균 조회수',
@@ -553,18 +567,19 @@ let sortKey='views',sortAsc=false;
 function renderTable(){
   const plats=platform==='all'?['instagram','youtube']:[platform];
   let rows=contentFor(plats)
-    .map(c=>({...c,eng:+engRate(c).toFixed(1)}));
+    .map(c=>({...c,eng:+engRate(c).toFixed(1),_tv:totalViews(c)}));
   rows.sort((a,b)=>{
-    let va=a[sortKey],vb=b[sortKey];
+    // 조회수 정렬은 광고 포함 총조회수 기준
+    let va=sortKey==='views'?a._tv:a[sortKey], vb=sortKey==='views'?b._tv:b[sortKey];
     if(typeof va==='string'){return sortAsc?va.localeCompare(vb):vb.localeCompare(va);}
     return sortAsc?va-vb:vb-va;
   });
   const tb=document.querySelector('#rankTable tbody');
   tb.innerHTML=rows.map(c=>`<tr>
-    <td>${c.url?`<a class="clink" href="${(''+c.url).replace(/"/g,'%22')}" target="_blank" rel="noopener noreferrer">${c.title} <span class="ext">↗</span></a>`:c.title} <span class="type">· ${c.type}</span></td>
+    <td>${c.url?`<a class="clink" href="${(''+c.url).replace(/"/g,'%22')}" target="_blank" rel="noopener noreferrer">${c.title} <span class="ext">↗</span></a>`:c.title} <span class="type">· ${c.type}</span>${adBadge(c)}</td>
     <td><span class="badge ${c.platform==='instagram'?'b-ig':'b-yt'}">${c.platform==='instagram'?'IG':'YT'}</span></td>
     <td>${c.date}</td>
-    <td>${fmt(c.views)}</td>
+    <td>${viewsHtml(c)}</td>
     <td>${c.reach?fmt(c.reach):'–'}</td>
     <td>${fmt(c.likes)}</td>
     <td>${fmt(c.comments)}</td>
@@ -589,7 +604,7 @@ function detailList(){
   const plats=dPlatform==='all'?['instagram','youtube']:[dPlatform];
   const rows=contentFor(plats).slice();
   if(dSort==='date')  rows.sort((a,b)=>(''+b.date).localeCompare(''+a.date));
-  if(dSort==='views') rows.sort((a,b)=>(+b.views||0)-(+a.views||0));
+  if(dSort==='views') rows.sort((a,b)=>totalViews(b)-totalViews(a));
   if(dSort==='eng')   rows.sort((a,b)=>engRate(b)-engRate(a));
   return rows;
 }
@@ -599,10 +614,10 @@ function renderPList(){
   if(!rows.some(r=>r.url===selUrl)) selUrl=rows[0]?.url||null;
   document.getElementById('plist').innerHTML=rows.map(c=>`
     <div class="pitem ${c.url===selUrl?'sel':''}" data-url="${(''+c.url).replace(/"/g,'%22')}">
-      <div class="t">${c.title}</div>
+      <div class="t">${c.title}${adBadge(c)}</div>
       <div class="m">
         <span class="badge ${c.platform==='instagram'?'b-ig':'b-yt'}">${PLABEL[c.platform]}</span>
-        <span>${c.date}</span><span>· ${c.type}</span><span>· 조회 ${fmt(c.views)}</span>
+        <span>${c.date}</span><span>· ${c.type}</span><span>· 조회 ${viewsHtml(c)}</span>
       </div>
     </div>`).join('');
 }
@@ -617,12 +632,15 @@ function renderPDetail(){
   box.innerHTML=`
     <div class="dhead">
       <h3>${c.title}</h3>
-      <span class="badge ${c.platform==='instagram'?'b-ig':'b-yt'}">${PLABEL[c.platform]}</span>
+      <span class="badge ${c.platform==='instagram'?'b-ig':'b-yt'}">${PLABEL[c.platform]}</span>${adBadge(c)}
     </div>
     <div class="sub" style="margin-bottom:16px">${c.date} · ${c.type}
       ${c.url?` · <a class="clink" href="${(''+c.url).replace(/"/g,'%22')}" target="_blank" rel="noopener noreferrer">원본 열기 <span class="ext">↗</span></a>`:''}</div>
     <div class="stats">
-      ${stat('조회수',fmt(c.views))}
+      ${adOf(c)
+        ? stat('총 조회수',fmt(totalViews(c))+`<span class="vsub">(${fmt(c.views)})</span>`,
+               `오가닉 ${fmt(c.views)} · 광고 +${fmt(adViews(c))}`)
+        : stat('조회수',fmt(c.views))}
       ${stat('도달',(+c.reach)?fmt(c.reach):'–',(+c.reach)?'':'YT 미집계')}
       ${stat('총 참여',fmt(inter),'좋아요+댓글+공유+저장')}
       ${stat('참여율',eng.toFixed(1)+'%',(+c.reach)?'도달 기준':'조회수 기준')}
@@ -937,14 +955,15 @@ async function autoLoad(){
   if(location.protocol==='file:') return; // 더블클릭으로 연 경우 → 샘플 표시
   try{
     const safe=u=>fetch(u,{cache:'no-store'}).catch(()=>({ok:false}));
-    const [d,c,g,ra,rc,rya,ryc]=await Promise.all([
+    const [d,c,g,ra,rc,rya,ryc,adm]=await Promise.all([
       fetch('data/daily.csv',{cache:'no-store'}),
       fetch('data/content.csv',{cache:'no-store'}),
       safe('data/demographics.csv'),
       safe('data/reference_accounts.csv'),
       safe('data/reference_content.csv'),
       safe('data/reference_yt_accounts.csv'),
-      safe('data/reference_yt_content.csv')
+      safe('data/reference_yt_content.csv'),
+      safe('data/ad_media.csv')
     ]);
     const txt=async r=>{if(!r||!r.ok)return null;const t=await r.text();return t.trim().split(/\r?\n/).length>1?t:null;};
     const td=await txt(d); if(td) DAILY=parseCSV(td);
@@ -954,6 +973,8 @@ async function autoLoad(){
     const trc=await txt(rc); if(trc) REF_CONTENT=parseCSV(trc);
     const trya=await txt(rya); if(trya) REFYT_ACCT=parseCSV(trya);
     const tryc=await txt(ryc); if(tryc) REFYT_CONTENT=parseCSV(tryc);
+    const tadm=await txt(adm);
+    if(tadm){ AD_MAP={}; parseCSV(tadm).forEach(r=>{ if(r.shortcode) AD_MAP[r.shortcode]=r; }); }
     if(d.ok||c.ok){
       document.getElementById('dataStatus').textContent='현재: 실시간 데이터 자동 로드됨 (data 폴더)';
       renderAll();
