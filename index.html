@@ -451,7 +451,8 @@ function engRate(c){
 let AD_MAP={};   // 쇼트코드 -> 광고 합계
 const igCode=u=>((''+(u||'')).match(/instagram\.com\/(?:p|reel|reels|tv)\/([^/?#]+)/)||[])[1]||'';
 const adOf=c=>c&&c.platform==='instagram'?AD_MAP[igCode(c.url)]:null;
-const adViews=c=>{const a=adOf(c);return a?(+a.ad_impressions||0):0;};   // 광고 추가 조회수 기준 지표
+// 광고 추가 조회수: 수집기가 인스타 기준으로 계산(릴스=재생수, 사진·카드뉴스=노출수)
+const adViews=c=>{const a=adOf(c);return a?(+(a.ad_views??a.ad_impressions)||0):0;};
 const totalViews=c=>(+c.views||0)+adViews(c);
 // 표기: 광고 집행 건은 "총조회수(오가닉)"
 const viewsHtml=c=>adOf(c)?`${fmt(totalViews(c))}<span class="vsub">(${fmt(c.views)})</span>`:fmt(c.views);
