@@ -1,31 +1,31 @@
 breakdown,label,value
-age,13-17,9
-age,18-24,215
-age,25-34,1065
-age,35-44,1295
-age,45-54,769
-age,55-64,199
-age,65+,91
-gender,F,657
-gender,M,1036
-gender,U,1950
+age,13-17,8
+age,18-24,219
+age,25-34,1067
+age,35-44,1299
+age,45-54,772
+age,55-64,200
+age,65+,92
+gender,F,656
+gender,M,1043
+gender,U,1958
 country,DE,3
 country,BD,1
 country,TW,4
 country,IN,2
 country,JP,3
-country,KR,3514
-country,PY,1
+country,KR,3529
 country,IR,1
-country,CN,42
+country,PY,1
+country,CN,41
 country,SA,1
 country,KZ,2
 country,BR,1
 country,AR,1
 country,CU,1
-country,SG,1
 country,MA,1
 country,AU,1
+country,SG,1
 country,PE,1
 country,PH,1
 country,NG,1
@@ -36,12 +36,12 @@ country,LK,2
 city,"Jeju, Jeju-do",27
 city,"Jinju, Gyeongsangnam-do",18
 city,"Wonju, Gangwon-do",24
-city,"Gwangju, Gwangju",56
-city,"Yongin, Gyeonggi-do",86
+city,"Gwangju, Gwangju",55
+city,"Yongin, Gyeonggi-do",88
 city,"Daegu, Daegu",155
 city,"Osan, Gyeonggi-do",56
-city,"Busan, Busan",186
-city,"Seoul, Seoul",795
+city,"Busan, Busan",187
+city,"Seoul, Seoul",801
 city,"Goyang, Gyeonggi-do",97
 city,"Pohang, Gyeongsangbuk-do",18
 city,"Naju, Jeollanam-do",65
@@ -50,25 +50,24 @@ city,"Namyangju, Gyeonggi-do",36
 city,"Gimpo, Gyeonggi-do",27
 city,"Gumi, Gyeongsangbuk-do",28
 city,"Iksan, Jeollabuk-do",24
-city,"Hanam, Gyeonggi-do",25
 city,"Sejong, Chungcheongbuk-do",25
+city,"Hanam, Gyeonggi-do",25
 city,"Incheon, Incheon",221
-city,"Guri, Gyeonggi-do",25
+city,"Guri, Gyeonggi-do",26
 city,"Jangsu, Jeollabuk-do",26
 city,"Jeonju, Jeollabuk-do",35
 city,"Hwaseong, Gyeonggi-do",58
-city,"Yangsan, Gyeongsangnam-do",18
 city,"Daejeon, Daejeon",124
-city,"Ansan, Gyeonggi-do",38
+city,"Ansan, Gyeonggi-do",39
 city,"Anyang, Gyeonggi-do",44
-city,"Changwon, Gyeongsangnam-do",66
-city,"Cheonan, Chungcheongnam-do",35
+city,"Changwon, Gyeongsangnam-do",67
+city,"Cheonan, Chungcheongnam-do",36
 city,"Cheongju, Chungcheongbuk-do",47
-city,"Bucheon, Gyeonggi-do",88
 city,"Suwon, Gyeonggi-do",88
+city,"Bucheon, Gyeonggi-do",88
 city,"Vancouver, British Columbia",43
 city,"Gwangju, Gyeonggi-do",21
-city,"Ulsan, Ulsan",56
+city,"Ulsan, Ulsan",57
 city,"Pyeongtaek, Gyeonggi-do",40
 city,"Gimhae, Gyeongsangnam-do",27
 city,"Uijeongbu, Gyeonggi-do",28
@@ -76,5 +75,6 @@ city,"Seongnam, Gyeonggi-do",72
 city,"Gunpo, Gyeonggi-do",26
 city,"Siheung, Gyeonggi-do",42
 city,"Gwangmyeong, Gyeonggi-do",25
+city,"Gongju, Chungcheongnam-do",18
 city,"Samcheok, Gangwon-do",66
 city,"Paju, Gyeonggi-do",28
