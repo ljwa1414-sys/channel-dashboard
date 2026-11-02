@@ -1,0 +1,15 @@
+{
+  "updated_at": "2026-11-02T01:34:17.952Z",
+  "updated_kst": "2026-11-02 10:34",
+  "schedule_kst": [
+    "09:00",
+    "17:00"
+  ],
+  "steps": {
+    "youtube": 0,
+    "instagram": 0,
+    "ads": 0,
+    "reference": 0,
+    "reference_yt": 0
+  }
+}

@@ -53,6 +53,14 @@
   .b-post{background:rgba(106,169,255,.18);color:#9dc4ff}
   .b-ad{background:rgba(245,166,35,.18);color:#f7c46c;margin-left:6px}
   .vsub{color:var(--muted);font-size:11px;font-weight:500;margin-left:3px}
+  /* 상단 마지막 업데이트 표시 */
+  .upd{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);
+    background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:5px 11px}
+  .upd b{color:var(--text);font-weight:600}
+  .upd.ok   .dot{width:7px;height:7px;border-radius:50%;background:#22c55e}
+  .upd.warn{border-color:rgba(245,166,35,.5);color:#f7c46c}
+  .upd.warn .dot{width:7px;height:7px;border-radius:50%;background:#f5a623}
+  .upd.warn b{color:#f7c46c}
   /* ---- 레퍼런스: 계정 카드 ---- */
   .acct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:14px}
   .acct-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px}
@@ -146,6 +154,7 @@
 <header>
   <h1>📊 채널 대시보드</h1>
   <span class="sub">Instagram · YouTube 통합 운영 현황</span>
+  <span class="upd" id="updStamp" hidden></span>
   <div class="spacer"></div>
   <div class="controls">
     <div class="seg" id="platformSeg">
@@ -951,6 +960,49 @@ function hookFile(id,assign){
 hookFile('dailyFile',d=>DAILY=d);
 hookFile('contentFile',d=>CONTENT=d);
 
+/* ---------- 상단 "마지막 업데이트" (data/status.json) ---------- */
+let STATUS=null;
+const STEP_LABEL={youtube:'유튜브',instagram:'인스타',ads:'광고',reference:'인스타 레퍼런스',reference_yt:'유튜브 레퍼런스'};
+const KH=9*3600e3;
+const kstParts=d=>{const k=new Date(d.getTime()+KH);return {y:k.getUTCFullYear(),m:k.getUTCMonth(),d:k.getUTCDate()};};
+const kstAt=(p,addDay,hm)=>{const [h,mi]=hm.split(':').map(Number);return new Date(Date.UTC(p.y,p.m,p.d+addDay,h,mi)-KH);};
+const kstLabel=d=>{const k=new Date(d.getTime()+KH);return `${String(k.getUTCMonth()+1).padStart(2,'0')}/${String(k.getUTCDate()).padStart(2,'0')} ${String(k.getUTCHours()).padStart(2,'0')}:${String(k.getUTCMinutes()).padStart(2,'0')}`;};
+function renderStatus(newer){
+  const el=document.getElementById('updStamp');
+  if(!STATUS||!STATUS.updated_at){el.hidden=true;return;}
+  const upd=new Date(STATUS.updated_at), now=new Date(), sched=STATUS.schedule_kst||['09:00','17:00'];
+  // 다음 예정 수집
+  const np=kstParts(now);
+  const next=[0,1].flatMap(dd=>sched.map(t=>kstAt(np,dd,t))).filter(t=>t>now).sort((a,b)=>a-b)[0];
+  const nextTxt=next?(kstParts(next).d===np.d?'오늘 ':'내일 ')+kstLabel(next).slice(6):'';
+  // 지연: 예정 시각(+30분 여유)이 지났는데 그 이후 갱신이 없으면
+  const ref=new Date(now.getTime()-30*60e3), rp=kstParts(ref);
+  const lastSched=[-1,0].flatMap(dd=>sched.map(t=>kstAt(rp,dd,t))).filter(t=>t<=ref).sort((a,b)=>b-a)[0];
+  const stale=lastSched&&upd<lastSched;
+  const failed=Object.entries(STATUS.steps||{}).filter(([,v])=>v!==0&&v!==null).map(([k])=>STEP_LABEL[k]||k);
+  const tip=['단계별 결과: '+Object.entries(STATUS.steps||{}).map(([k,v])=>`${STEP_LABEL[k]||k} ${v===0?'성공':v===null?'-':'실패('+v+')'}`).join(', ')];
+  let cls='ok', html;
+  if(newer){
+    cls='warn';
+    html=`<span class="dot"></span>새 데이터가 있습니다 · <b style="cursor:pointer;text-decoration:underline" onclick="location.reload()">새로고침</b>`;
+  }else{
+    html=`<span class="dot"></span>마지막 업데이트 <b>${kstLabel(upd)}</b>`;
+    if(stale){cls='warn';html=`<span class="dot"></span>업데이트 지연 · 마지막 <b>${kstLabel(upd)}</b>`;
+      tip.unshift(`예정된 수집(${kstLabel(lastSched)})이 실행되지 않았습니다 — 호스트 PC가 꺼져 있었거나 수집이 멈췄을 수 있습니다.`);}
+    else if(nextTxt) html+=` · 다음 예정 ${nextTxt}`;
+    if(failed.length){cls='warn';html+=` · ⚠ 일부 실패: ${failed.join(', ')}`;}
+  }
+  el.className='upd '+cls; el.innerHTML=html; el.title=tip.join('\n'); el.hidden=false;
+}
+// 열어둔 탭이 오래된 데이터를 보고 있는지 5분마다 확인
+setInterval(async()=>{
+  if(location.protocol==='file:'||!STATUS) return;
+  try{
+    const s=await (await fetch('data/status.json',{cache:'no-store'})).json();
+    renderStatus(s.updated_at&&s.updated_at>STATUS.updated_at);
+  }catch(e){ renderStatus(false); }
+},5*60*1000);
+
 /* ---------- 서버로 열렸으면 data/*.csv 자동 로드 (file://이면 샘플 유지) ---------- */
 async function autoLoad(){
   if(location.protocol==='file:') return; // 더블클릭으로 연 경우 → 샘플 표시
@@ -976,6 +1028,7 @@ async function autoLoad(){
     const tryc=await txt(ryc); if(tryc) REFYT_CONTENT=parseCSV(tryc);
     const tadm=await txt(adm);
     if(tadm){ AD_MAP={}; parseCSV(tadm).forEach(r=>{ if(r.shortcode) AD_MAP[r.shortcode]=r; }); }
+    try{ const sr=await fetch('data/status.json',{cache:'no-store'}); if(sr.ok){ STATUS=await sr.json(); renderStatus(false); } }catch(e){}
     if(d.ok||c.ok){
       document.getElementById('dataStatus').textContent='현재: 실시간 데이터 자동 로드됨 (data 폴더)';
       renderAll();
