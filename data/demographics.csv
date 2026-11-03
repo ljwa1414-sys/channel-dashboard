@@ -1,14 +1,14 @@
 breakdown,label,value
-age,13-17,7
-age,18-24,237
-age,25-34,1126
-age,35-44,1322
-age,45-54,784
+age,13-17,8
+age,18-24,235
+age,25-34,1129
+age,35-44,1324
+age,45-54,783
 age,55-64,212
 age,65+,96
-gender,F,663
-gender,M,1123
-gender,U,1998
+gender,F,666
+gender,M,1122
+gender,U,1999
 country,DE,3
 country,BD,1
 country,TW,4
@@ -16,15 +16,15 @@ country,JP,3
 country,PY,1
 country,SA,1
 country,BR,1
-country,SG,1
 country,MA,1
+country,SG,1
 country,GB,1
 country,ID,2
 country,KH,1
 country,US,3
-country,CA,53
-country,IN,2
-country,KR,3652
+country,CA,52
+country,IN,3
+country,KR,3655
 country,IR,1
 country,CN,42
 country,MY,1
@@ -39,22 +39,22 @@ country,LK,2
 city,"Jeju, Jeju-do",26
 city,"Wonju, Gangwon-do",28
 city,"Gwangju, Gwangju",53
-city,"Yongin, Gyeonggi-do",94
+city,"Yongin, Gyeonggi-do",95
 city,"Daegu, Daegu",163
 city,"Osan, Gyeonggi-do",57
 city,"Busan, Busan",191
 city,"Seoul, Seoul",835
-city,"Goyang, Gyeonggi-do",102
+city,"Goyang, Gyeonggi-do",103
 city,"Pohang, Gyeongsangbuk-do",17
 city,"Naju, Jeollanam-do",65
 city,"Geoje, Gyeongsangnam-do",25
-city,"Namyangju, Gyeonggi-do",37
+city,"Namyangju, Gyeonggi-do",38
 city,"Gimpo, Gyeonggi-do",29
 city,"Gumi, Gyeongsangbuk-do",31
 city,"Hanam, Gyeonggi-do",26
 city,"Sejong, Chungcheongbuk-do",27
 city,"Iksan, Jeollabuk-do",28
-city,"Incheon, Incheon",224
+city,"Incheon, Incheon",223
 city,"Guri, Gyeonggi-do",27
 city,"Jangsu, Jeollabuk-do",23
 city,"Jeonju, Jeollabuk-do",35
@@ -68,7 +68,7 @@ city,"Cheonan, Chungcheongnam-do",37
 city,"Cheongju, Chungcheongbuk-do",48
 city,"Bucheon, Gyeonggi-do",85
 city,"Suwon, Gyeonggi-do",88
-city,"Vancouver, British Columbia",44
+city,"Vancouver, British Columbia",43
 city,"Gwangju, Gyeonggi-do",18
 city,"Ulsan, Ulsan",60
 city,"Pyeongtaek, Gyeonggi-do",46
@@ -79,5 +79,5 @@ city,"Gunpo, Gyeonggi-do",26
 city,"Siheung, Gyeonggi-do",42
 city,"Gwangmyeong, Gyeonggi-do",28
 city,"Gongju, Chungcheongnam-do",18
-city,"Samcheok, Gangwon-do",62
+city,"Samcheok, Gangwon-do",64
 city,"Paju, Gyeonggi-do",27
