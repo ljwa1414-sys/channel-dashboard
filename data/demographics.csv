@@ -1,13 +1,13 @@
 breakdown,label,value
 age,13-17,8
-age,18-24,234
+age,18-24,232
 age,25-34,1131
-age,35-44,1316
+age,35-44,1318
 age,45-54,788
 age,55-64,207
 age,65+,103
-gender,F,669
-gender,M,1132
+gender,F,667
+gender,M,1134
 gender,U,1986
 country,DE,3
 country,BD,1
@@ -25,17 +25,17 @@ country,US,3
 country,CA,53
 country,AE,1
 country,IN,3
-country,KR,3648
+country,KR,3649
 country,IR,2
 country,CN,43
 country,MY,1
-country,KZ,3
+country,KZ,2
 country,AR,1
 country,CU,1
 country,AU,1
 country,PE,1
-country,PH,1
 country,VN,1
+country,PH,1
 country,NG,1
 country,LK,2
 city,"Jeju, Jeju-do",25
@@ -54,9 +54,9 @@ city,"Geoje, Gyeongsangnam-do",25
 city,"Namyangju, Gyeonggi-do",38
 city,"Gimpo, Gyeonggi-do",28
 city,"Gumi, Gyeongsangbuk-do",33
-city,"Hanam, Gyeonggi-do",24
 city,"Sejong, Chungcheongbuk-do",25
-city,"Iksan, Jeollabuk-do",54
+city,"Hanam, Gyeonggi-do",25
+city,"Iksan, Jeollabuk-do",53
 city,"Incheon, Incheon",220
 city,"Guri, Gyeonggi-do",27
 city,"Jangsu, Jeollabuk-do",21
@@ -66,10 +66,10 @@ city,"Yangsan, Gyeongsangnam-do",21
 city,"Daejeon, Daejeon",127
 city,"Ansan, Gyeonggi-do",40
 city,"Anyang, Gyeonggi-do",48
-city,"Changwon, Gyeongsangnam-do",70
+city,"Changwon, Gyeongsangnam-do",71
 city,"Cheonan, Chungcheongnam-do",37
 city,"Cheongju, Chungcheongbuk-do",44
-city,"Bucheon, Gyeonggi-do",80
+city,"Bucheon, Gyeonggi-do",79
 city,"Suwon, Gyeonggi-do",89
 city,"Vancouver, British Columbia",34
 city,"Gwangju, Gyeonggi-do",18
@@ -81,5 +81,5 @@ city,"Seongnam, Gyeonggi-do",78
 city,"Gunpo, Gyeonggi-do",26
 city,"Siheung, Gyeonggi-do",44
 city,"Gwangmyeong, Gyeonggi-do",25
-city,"Gongju, Chungcheongnam-do",17
+city,"Chungju, Chungcheongbuk-do",17
 city,"Paju, Gyeonggi-do",31
