@@ -1,14 +1,14 @@
 breakdown,label,value
-age,13-17,8
-age,18-24,262
-age,25-34,1155
-age,35-44,1319
-age,45-54,793
-age,55-64,209
+age,13-17,9
+age,18-24,265
+age,25-34,1153
+age,35-44,1325
+age,45-54,798
+age,55-64,208
 age,65+,105
-gender,F,675
-gender,M,1160
-gender,U,2016
+gender,F,678
+gender,M,1167
+gender,U,2018
 country,DE,3
 country,BD,1
 country,TW,4
@@ -21,11 +21,11 @@ country,SG,2
 country,GB,1
 country,ID,2
 country,KH,1
-country,US,3
+country,US,4
 country,CA,53
 country,AE,1
 country,IN,3
-country,KR,3713
+country,KR,3724
 country,IR,2
 country,CN,43
 country,MY,1
@@ -40,23 +40,23 @@ country,NG,1
 country,LK,2
 city,"Jeju, Jeju-do",30
 city,"Wonju, Gangwon-do",27
-city,"Gwangju, Gwangju",57
+city,"Gwangju, Gwangju",59
 city,"Yongin, Gyeonggi-do",95
-city,"Daegu, Daegu",178
-city,"Osan, Gyeonggi-do",59
+city,"Daegu, Daegu",179
+city,"Osan, Gyeonggi-do",60
 city,"Busan, Busan",197
-city,"Seoul, Seoul",843
-city,"Goyang, Gyeonggi-do",106
-city,"Pohang, Gyeongsangbuk-do",19
+city,"Seoul, Seoul",845
+city,"Goyang, Gyeonggi-do",108
+city,"Pohang, Gyeongsangbuk-do",20
 city,"Naju, Jeollanam-do",66
-city,"Geoje, Gyeongsangnam-do",28
+city,"Geoje, Gyeongsangnam-do",27
 city,"Namyangju, Gyeonggi-do",41
 city,"Gimpo, Gyeonggi-do",29
 city,"Gumi, Gyeongsangbuk-do",39
 city,"Iksan, Jeollabuk-do",18
 city,"Hanam, Gyeonggi-do",26
 city,"Sejong, Chungcheongbuk-do",27
-city,"Incheon, Incheon",242
+city,"Incheon, Incheon",245
 city,"Guri, Gyeonggi-do",29
 city,"Jangsu, Jeollabuk-do",21
 city,"Jeonju, Jeollabuk-do",39
@@ -66,8 +66,8 @@ city,"Daejeon, Daejeon",136
 city,"Ansan, Gyeonggi-do",41
 city,"Anyang, Gyeonggi-do",54
 city,"Changwon, Gyeongsangnam-do",75
-city,"Cheonan, Chungcheongnam-do",42
-city,"Cheongju, Chungcheongbuk-do",43
+city,"Cheonan, Chungcheongnam-do",41
+city,"Cheongju, Chungcheongbuk-do",44
 city,"Bucheon, Gyeonggi-do",93
 city,"Suwon, Gyeonggi-do",100
 city,"Vancouver, British Columbia",43
